@@ -143,3 +143,4 @@ cython_debug/
 # Misc
 *.bin
 
+.vscode/settings.json
