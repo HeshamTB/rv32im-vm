@@ -1,0 +1,19 @@
+#!/bin/python
+
+from argparse import ArgumentParser
+
+# TODO: check for myhdl if needed
+print('RV32IM VM (Team 2)')
+
+def main():
+    files = parseArgs()['input_files']
+    # Start VM (file read and init CPU, mem)
+
+def parseArgs() -> dict:
+    parser = ArgumentParser()
+    parser.add_argument('input_files',type=str, nargs='+')
+    parsed = parser.parse_args() # Defualts to sys.argv[]
+    return vars(parsed)
+
+if __name__ == '__main__':
+    exit(main())
