@@ -1,19 +1,49 @@
 #!/bin/python
 
 from argparse import ArgumentParser
-
+from mem import Memory
 # TODO: check for myhdl if needed
 print('RV32IM VM (Team 2)')
 
 def main():
     files = parseArgs()['input_files']
-    # Start VM (file read and init CPU, mem)
+    # Read bin/mem files
+    bin_content_text = readMemFile(files[0])
+    bin_content_data = readMemFile(files[1])
+    print("Code size: ", len(bin_content_text))
+    print("Static Data size: ", len(bin_content_data))
+    # Memory size is 2 times the data and text sections for now.
+    mem_size = int((len(bin_content_text)+ len(bin_content_data))*2)
+    print("Allocated memory size ", mem_size ,' Bytes')
+    # Init RAM
+    RAM = Memory(mem_size)
+    RAM = loadRam(RAM, bin_content_text) # Load text section
+    RAM = loadRam(RAM, bin_content_data, RAM.getSize()-len(bin_content_data)) # TODO Place in bottom
+    for i in range(RAM.getSize()):
+        print(hex(int.from_bytes(RAM.read(i), 'little')))
+    # Start CPU
 
 def parseArgs() -> dict:
+    # TODO: Add mem allocation option
     parser = ArgumentParser()
-    parser.add_argument('input_files',type=str, nargs='+')
+    parser.add_argument('input_files',type=str, nargs=2)
     parsed = parser.parse_args() # Defualts to sys.argv[]
     return vars(parsed)
+
+def readMemFile(file_name: str) -> bytearray:
+    """
+    Read file as binary byte array
+    """
+    content = bytearray()
+    with open(file_name, 'rb') as file:
+        content += file.read()
+    return content
+
+def loadRam(RAM: Memory, data: bytearray, offset:int = 0) -> Memory:
+    for i, val in enumerate(data):
+        #print('Real address: %d With offset: %d Value: %d' % (i, i+offset, val))
+        RAM.write(i+offset, bytearray()+val.to_bytes(1,'little'))
+    return RAM
 
 if __name__ == '__main__':
     exit(main())
