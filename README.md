@@ -8,6 +8,6 @@ System calls invoked by ecall. The table below shows how to setup the the regist
 |SYSCALL| a0 | a1 |a2| a7
 |--|--|--|--|--|
 | EXIT | Return code |--| --- | 0x00
-| PRINT | std[err\|out] |Content address| Read length | 0x01 
+| PRINT | std[err\|out] |Content address| Read length | 0x40
 
 
