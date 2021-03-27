@@ -41,11 +41,11 @@ class Memory:
         val = int.from_bytes(self.mem[address], 'little')
         return val
     
-    def dump(self) -> str:
+    def dump(self) -> list:
         import os
         values = list()
         for i, val in enumerate(self.mem):
-            values += hex(int.from_bytes(val, 'little'))+os.linesep
+            values.append(hex(int.from_bytes(val, 'little')))
 
         # dum = str()
         # for i, val in enumerate(values):
@@ -55,4 +55,6 @@ class Memory:
 if __name__ == '__main__':
     x = Memory(50)
     x.write(0x22, int(22).to_bytes(1,'little'))
-    print(x.dump())
+    x.write(0, int(9).to_bytes(1, 'little'))
+    dump = x.dump()
+    for i in range(len(dump)): print(dump[i])
