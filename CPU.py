@@ -17,46 +17,13 @@ class CPU:
         """
             A sub class that has a function for each major arithmetic and logic operation (e.g. ADD, SUB, SHIFT, etc).
             These major functions should be called from within the cpu, by the executioner function.
+
+
         """
 
+
         # TODO: Think about the two functions commented below. If they serve no purpose anymore, delete them.
-        # def exc_arithmetic(self, arg1, arg2, fn3, fn7=None, s=False, b=False):
-        #     if fn3 == 0x0:  # ADD, SUB, MUL
-        #         if fn7 == 0x01:
-        #             return arg1*arg2
-        #         elif fn7 == 0x00 or fn7 is None:
-        #             return arg1+arg2
-        #         elif fn7 == 0x20:
-        #             return arg1-arg2
-        #
-        #     elif fn3 == 0x1:
-        #         if fn7 == 0x01:  # MUL HIGH
-        #             return arg1 * arg2  # Needs attention
-        #
-        #     elif fn3 == 0x2:
-        #         if fn7 == 0x01:  # MUL HIGH (S)(U)
-        #             return arg1 * arg2  # Needs attention
-        #
-        #     elif fn3 == 0x3:
-        #         if fn7 == 0x01:  # MUL HIGH (U)
-        #             return arg1 * arg2  # Needs attention
-        #
-        #     elif fn3 == 0x4:
-        #         if fn7 == 0x01:
-        #             return arg1/arg2
-        #
-        #     elif fn3 == 0x5:
-        #         if fn7 == 0x01:  # DIV (U)
-        #             return arg1 / arg2  # Needs Attention
-        #
-        #     elif fn3 == 0x6:
-        #         if fn7 == 0x01:  # REMAINDER
-        #             return arg1 % arg2
-        #
-        #     elif fn3 == 0x7:
-        #         if fn7 == 0x01:  # REMAINDER (U)
-        #             return arg1 % arg2  # Needs attention
-    # End of ALU inner class
+
 
     # Constructor of CPU
     def __init__(self):
@@ -380,60 +347,233 @@ class CPU:
         elif opcode == 0b1110011:  # syscalls
             pass
 
-        # Following dictionaries were for testing.
-        # instructions_dictionary = {0b0110011:
-        #                                [{'inst': 'add', 'func3': '000', 'func7': '0000000'},
-        #                                 {'inst': 'sub', 'func3': '000', 'func7': '0100000'},
-        #                                 {'inst': 'xor', 'func3': '100', 'func7': '0000000'},
-        #                                 {'inst': 'or', 'func3': '110', 'func7': '0000000'},
-        #                                 {'inst': 'and', 'func3': '111', 'func7': '0000000'},
-        #                                 {'inst': 'sll', 'func3': '001', 'func7': '0000000'},
-        #                                 {'inst': 'srl', 'func3': '101', 'func7': '0000000'},
-        #                                 {'inst': 'sra', 'func3': '101', 'func7': '0100000'},
-        #                                 {'inst': 'slt', 'func3': '010', 'func7': '0000000'},
-        #                                 {'inst': 'sltu', 'func3': '011', 'func7': '0000000'}],
-        #                            0b0010011: "I",
-        #                            0b0000011: "L",
-        #                            0b0100011: "S",
-        #                            0b1100011: "B",
-        #                            0b1101111: "J",
-        #                            0b1100111: "Jalr",
-        #                            0b0110111: "lui",
-        #                            0b0010111: "auipc",
-        #                            0b1110011: "syscalls"}
-        # print()
-        # instructions_dictionary = {0b0110011: {'func3': 0b000, 'func7': 0b0000000},
-        #                            0b0010011: "I",
-        #                            0b0000011: "L",
-        #                            0b0100011: "S",
-        #                            0b1100011: "B",
-        #                            0b1101111: "J",
-        #                            0b1100111: "Jalr",
-        #                            0b0110111: "lui",
-        #                            0b0010111: "auipc",
-        #                            0b1110011: "syscalls"}
+    def Fahd(self,memory_snippet):
+        # ----------------------------- test -----------------------------#
 
-# Testing area:
-x = CPU.ALU()
-#x.exc_arithmetic(0,0)
-y = 5
-ar = bytearray(5)
-ar[1] = 255
-print(ar[1])
-print(ar)
-print(x)
-# Notes:
-# We can use bytearray indices as numbers. for example if x is a bytearray, we can access like
-# x[3] -> will return the fourth byte in the array. Just like normal arrays. it will be returned as integer.
-# We can also manipulate it like integer or bits. It is acutally binary. we can do x[3] & 0b0001 or
-# x[3] = y + 4 or any other operation, and it will be stored back as a byte.
+        # Here we have data an example of data fetched from memory
+        memory = []
+        memory.append(0b00001111110000010000010100010111.to_bytes(4, byteorder='little'))
+        # four_byte=memory[0]
+        buffer_int = int.from_bytes(memory[0], 'little')
+        data_holder = intbv(buffer_int)[32:0]
+        rd = 0b0
+        rs1 = 0b0
+        rs2 = 0b0
+        funct3 = 0b0
+        funct7 = 0b0
+        imm = 0b0
+        imm1 = 0b0
+        imm2 = 0b0
+        # memory has 4 bytes and the opcode will take the first byte that contains the opcode.
+        # opcode=four_byte[:1]
+        # binary_string = "{:08b}".format(int(opcode.hex(),16)) # change the format to a string showing the byte bits.
+        key_opcodes = [0b0110011, 0b0010011, 0b0000011, 0b1100111, 0b1110011, 0b0100011, 0b1100011, 0b0110111,
+                       0b0010111,
+                       0b1101111]  # opcode for R I S B U J types.
 
-# also note that we can use intbv for slicing
+        type = ''
 
-# ----- intbv notes ----- #
-# if you want to store 0b1100 as signed number (should be -4 not 12) then you must do the following:
-# 1-    x = intbv(0b1100, min=0, max=16) -> note that we defined min and max. this is a must. alternativly,
-#       ... we can also define number of bits instead of min and max. this will also work
-# 2-    y = x.signed() -> returns -4
-# If we didn't define min and max in x, then y will return 12.
+        for i in range(len(key_opcodes)):
+            if data_holder[6:0] == key_opcodes[i]:
+                print('match found')
 
+                if i == 0:
+                    print('Type is: ', 'R')
+                    type = 'R'
+                if i == 1:
+                    print('Type is: ', 'I')
+                    type = 'I1'
+                if i == 2:
+                    print('Type is: ', 'I')
+                    type = 'I2'
+                if i == 3:
+                    print('Type is: ', 'I')
+                    type = 'I3'
+                if i == 4:
+                    print('Type is: ', 'I')
+                    type = 'I4'
+                if i == 5:
+                    print('Type is: ', 'S')
+                    type = 'S'
+                if i == 6:
+                    print('Type is: ', 'B')
+                    type = 'B'
+                if i == 7:
+                    print('Type is: ', 'U')
+                    type = 'U'
+                if i == 8:
+                    print('Type is: ', 'U')
+                    type = 'U'
+                if i == 9:
+                    print('Type is: ', 'J')
+                    type = 'J'
+
+        #------------ R type execution section ------------#
+        if type == 'R':
+            rd = data_holder[11:7]
+            rs1 = data_holder[19:15]
+            rs2 = data_holder[24:20]
+            funct3 = data_holder[14:12]
+            funct7 = data_holder[31:25]
+            # look for the correct instruction via func3 and func7
+            if funct3 == 0b000:
+                if funct7 == 0x0:
+                    self.ADD(rs1, rs2)
+                if funct7 == 0x20:
+                    self.SUB(rs1,rs2)
+
+            if funct3 ==0x4 and funct7==0x0:
+                self.XOR(rs1,rs2)
+            if funct3==0x6 and funct7==0x0:
+                self.OR(rs1,rs2)
+            if funct3==0x7 and funct7==0x0:
+                self.AND(rs1,rs2)
+            if funct3==0x1 and funct7==0x0:
+                self.SHIFT(rs1,rs2,'l')
+            if funct3==0x5 and funct7==0x0:
+                self.SHIFT(rs1,rs2)
+            if funct3==0x5 and funct7==0x20:
+                self.SHIFT(rs1,rs2,'r',True)
+
+            if funct3 == 0x2 and funct7 == 0x0: # the execution method here is not yet added
+                print()
+
+            if funct3 == 0x3 and funct7 == 0x0:# the execution method here is not yet added
+                print()
+        # ------------ R type execution section ------------#
+
+        #------------ I type execution section ------------#
+
+        if type == 'I1':
+            rd=data_holder[11:7]
+            funct3=data_holder[14:12]
+            rs1=data_holder[19:15]
+            imm=data_holder[31:20]
+
+            if funct3 == 0x0:
+                self.ADD(rs1,imm)
+            if funct3 == 0x4:
+                self.XOR(rs1,imm)
+            if funct3 == 0x6:
+                self.OR(rs1,imm)
+            if funct3 == 0x7:
+                self.AND(rs1,imm)
+            if funct3 == 0x1:
+                self.SHIFT()
+            print()
+
+        if type == 'I2':
+            rd = data_holder[11:7]
+            funct3 = data_holder[14:12]
+            rs1 = data_holder[19:15]
+            imm = data_holder[31:20]
+
+
+        if type =='I3':
+            print()
+
+        if type =='I4':
+            print()
+        # ------------ I type execution section ------------#
+
+
+
+        # ------------ S type execution section ------------#
+        if type == 'S':
+            rs1=data_holder[19:15]
+            rs2=data_holder[24:20]
+            buffer=[]
+            buffer.append(data_holder[7])
+            buffer.append(data_holder[8])
+            buffer.append(data_holder[9])
+            buffer.append(data_holder[10])
+            buffer.append(data_holder[11])
+            buffer.append(data_holder[25])
+            buffer.append(data_holder[26])
+            buffer.append(data_holder[27])
+            buffer.append(data_holder[28])
+            buffer.append(data_holder[29])
+            buffer.append(data_holder[30])
+            buffer.append(data_holder[31])
+
+            imm = intbv(buffer)[32:0]
+            # change the imm to intbv
+            if funct3 == 0x0:
+                self.STORE(rs1,rs2,imm)
+            if funct3 == 0x1:
+                self.STORE(rs1,rs2,imm,2)
+            if funct3 == 0x2:
+                self.STORE(rs1,rs2,imm,4)
+
+        # ------------ S type execution section ------------#
+
+        # ------------ B type execution section ------------#
+        if type=='B':
+            buffer=[]
+
+            buffer.append(data_holder[8])
+            buffer.append(data_holder[9])
+            buffer.append(data_holder[10])
+            buffer.append(data_holder[11])
+            buffer.append(data_holder[25]) # 10:5
+            buffer.append(data_holder[26])
+            buffer.append(data_holder[27])
+            buffer.append(data_holder[28])
+            buffer.append(data_holder[29])
+            buffer.append(data_holder[30])
+            buffer.append(data_holder[7])
+            buffer.append(data_holder[31])
+            #must make the intbv arg as an int
+
+            imm = intbv(buffer)[32:0]
+            funct3 = data_holder[14:12]
+            rs1 = data_holder[19:15]
+            rs2 = data_holder[24:20]
+
+            if funct3 == 0x0:
+                self.BRANCH(rs1,rs2,imm,'e')
+            if funct3 == 0x1:
+                self.BRANCH(rs1,rs2,imm,'ne')
+            if funct3 == 0x4:
+                self.BRANCH(rs1,rs2,imm,'lt')
+            if funct3 == 0x5:
+                self.BRANCH(rs1,rs2,imm,'ge')
+            if funct3 == 0x6:
+                self.BRANCH(rs1,rs2,imm,'lt',False)
+            if funct3 == 0x7:
+                self.BRANCH(rs1,rs2,imm,'ge',False)
+        # ------------ B type execution section ------------#
+
+        # ------------ U type execution section ------------#
+        if type == 'U':
+            rd = data_holder[11:7]
+            imm = data_holder[31:12]
+            self.LUI(rd, imm)
+        # ------------ U type execution section ------------#
+
+        if type == 'J':
+            rd=data_holder[11:7]
+
+
+
+
+
+
+        # ----------------------------- test -----------------------------#
+
+
+
+
+memory = []
+memory.append(0b00001111110000010000010100010111.to_bytes(4, byteorder='little'))
+# four_byte=memory[0]
+buffer_int = int.from_bytes(memory[0], 'little')
+data_holder = intbv(buffer_int)[32:0]
+print(data_holder[0]==0x1)
+th=[1,2,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32]
+print('start working!')
+buffer= []
+print(buffer)
+buffer.append(th[0:4])
+buffer.append(th[5:7])
+print(buffer)
