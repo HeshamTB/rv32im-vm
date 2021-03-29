@@ -3,6 +3,16 @@
 from argparse import ArgumentParser
 from mem import Memory
 # TODO: check for myhdl if needed
+
+# From memory-layout.txt
+_add_text_base = 0
+_add_text_limit = 0x0ffc
+_add_data_base = 0x2000 # up to 2fff
+#_add_data_limit = 0x2000
+_add_stack_base = 0x3ffc
+_add_heap_base = 0x3000
+
+_add_global_ptr = 0x1800
 print('RV32IM VM (Team 2)')
 
 def main():
@@ -13,14 +23,15 @@ def main():
     print("Code size: ", len(bin_content_text))
     print("Static Data size: ", len(bin_content_data))
     # Memory size is 2 times the data and text sections for now.
-    mem_size = int((len(bin_content_text)+ len(bin_content_data))*2)
-    print("Allocated memory size ", mem_size ,' Bytes')
+    mem_size = 0x3ffc
+    print("Allocated memory size ", mem_size, ' Bytes')
     # Init RAM
     RAM = Memory(mem_size)
     RAM = loadRam(RAM, bin_content_text) # Load text section
-    RAM = loadRam(RAM, bin_content_data, RAM.getSize()-len(bin_content_data)) # TODO Place in bottom
-    for i in range(RAM.getSize()):
-        print(hex(int.from_bytes(RAM.read(i), 'little')))
+    RAM = loadRam(RAM, bin_content_data, _add_data_base) # Load data
+    print("--------------------------------------")
+    # for i, val in enumerate(RAM.dump()):
+    #     print(hex(i), val)
     # Start CPU
 
 def parseArgs() -> dict:
