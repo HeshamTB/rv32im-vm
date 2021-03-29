@@ -2,6 +2,7 @@
 
 from argparse import ArgumentParser
 from mem import Memory
+from CPU import CPU
 # TODO: check for myhdl if needed
 
 # From memory-layout.txt
@@ -33,11 +34,14 @@ def main():
     # for i, val in enumerate(RAM.dump()):
     #     print(hex(i), val)
     # Start CPU
-
+    cpu = CPU(RAM)
+    while (1):
+        #cpu.fetch()
+        pass
 def parseArgs() -> dict:
     # TODO: Add mem allocation option
     parser = ArgumentParser()
-    parser.add_argument('input_files',type=str, nargs=2)
+    parser.add_argument('input_files', type=str, nargs=2)
     parsed = parser.parse_args() # Defualts to sys.argv[]
     return vars(parsed)
 

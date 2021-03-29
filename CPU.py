@@ -1,6 +1,6 @@
 from myhdl import intbv, bin
 from mem import Memory
-
+import syscalls
 
 class CPU:
     """
@@ -12,7 +12,7 @@ class CPU:
     """
 
     # Constructor of CPU
-    def __init__(self):
+    def __init__(self, ram : Memory):
         """
             CPU constructor
             This initializes the registers
@@ -20,7 +20,7 @@ class CPU:
         """
         self.regs = [intbv(0)[32:0] for i in range(32)]  # The Registers. Just a typical list
         self.pc = 0
-        self.test_mem = Memory(100)  # just for testing.
+        self.ram = ram  # just for testing.
 
     # =========== Fetching Area =========== #
     """
@@ -162,11 +162,11 @@ class CPU:
         target_address = src + imm
         loaded_bytes = None
         if width == 1:
-            loaded_bytes = self.test_mem.read(target_address)
+            loaded_bytes = self.ram.read(target_address)
         elif width == 2:
-            loaded_bytes = self.test_mem.readHalfWord(target_address)
+            loaded_bytes = self.ram.readHalfWord(target_address)
         elif width == 4:
-            loaded_bytes = self.test_mem.readWord(target_address)
+            loaded_bytes = self.ram.readWord(target_address)
         else:
             print("Error: please enter valid load width")
             exit(0)
@@ -194,7 +194,7 @@ class CPU:
         # Loop, each time store one byte from src2 in the memory.
         for i in range(width):
             store_byte = src2[i].to_bytes(1, 'little')
-            self.test_mem.write(target_address + i, store_byte)
+            self.ram.write(target_address + i, store_byte)
 
     # -------------------------- Branch Instructions -------------------------- #
     def BRANCH(self, rs1, rs2, imm: intbv, cond='e', signed=True):
@@ -287,7 +287,7 @@ class CPU:
     # -------------------------- System calls -------------------------- #
     # TODO: Implement system calls.
     def ecall(self):
-        pass
+        syscalls.handle(self.regs, self.ram)
 
     def ebreak(self):
         pass
