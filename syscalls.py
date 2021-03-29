@@ -12,6 +12,7 @@ _code = 10
 
 _syscall_exit = 93
 _syscall_print = 64
+_syscall_halt = 0
 
 _stdout = 1
 _stderr = 2
@@ -30,6 +31,8 @@ def handle(regs: list, mem: Memory):
     elif regs[_function] == _syscall_exit:
         exit_val = regs[_code] # Exit code in a0, x10. could be signed
         _sys_exit(int(exit_val))
+    elif regs[_function] == _syscall_halt:
+        _sys_halt()
     else:
         # Unimplemented req
         pass
@@ -45,6 +48,10 @@ def _sys_print(data, stream: int = 0):
 
 def _sys_exit(code: int):
     exit(code)
+
+def _sys_halt():
+    input("system is halted")
+    exit()
 
 def _getTextFromMem(mem: Memory, start_add, length):
     val = bytes()

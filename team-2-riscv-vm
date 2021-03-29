@@ -35,9 +35,10 @@ def main():
     #     print(hex(i), val)
     # Start CPU
     cpu = CPU(RAM)
-    while (1):
+    while 1:
         #cpu.fetch()
         pass
+
 def parseArgs() -> dict:
     # TODO: Add mem allocation option
     parser = ArgumentParser()
