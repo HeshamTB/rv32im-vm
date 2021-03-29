@@ -2,6 +2,7 @@ from myhdl import intbv, bin
 from mem import Memory
 import syscalls
 
+
 class CPU:
     """
         In this class, we have the following components/sections:
@@ -12,7 +13,7 @@ class CPU:
     """
 
     # Constructor of CPU
-    def __init__(self, ram : Memory):
+    def __init__(self, ram: Memory):
         """
             CPU constructor
             This initializes the registers
