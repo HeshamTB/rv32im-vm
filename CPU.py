@@ -328,7 +328,7 @@ class CPU:
                        0b0010111,
                        0b1101111]  # opcode for R I S B U J types.
 
-        type = ''
+        type_t = ''
 
         for i in range(len(key_opcodes)):
             if data_holder[6:0] == key_opcodes[i]:
@@ -336,37 +336,37 @@ class CPU:
 
                 if i == 0:
                     print('Type is: ', 'R')
-                    type = 'R'
+                    type_t = 'R'
                 if i == 1:
                     print('Type is: ', 'I')
-                    type = 'I1'
+                    type_t = 'I1'
                 if i == 2:
                     print('Type is: ', 'I')
-                    type = 'I2'
+                    type_t = 'I2'
                 if i == 3:
                     print('Type is: ', 'I')
-                    type = 'I3'
+                    type_t = 'I3'
                 if i == 4:
                     print('Type is: ', 'I')
-                    type = 'I4'
+                    type_t = 'I4'
                 if i == 5:
                     print('Type is: ', 'S')
-                    type = 'S'
+                    type_t = 'S'
                 if i == 6:
                     print('Type is: ', 'B')
-                    type = 'B'
+                    type_t = 'B'
                 if i == 7:
                     print('Type is: ', 'U')
-                    type = 'U1'
+                    type_t = 'U1'
                 if i == 8:
                     print('Type is: ', 'U')
-                    type = 'U2'
+                    type_t = 'U2'
                 if i == 9:
                     print('Type is: ', 'J')
-                    type = 'J'
+                    type_t = 'J'
 
         # ------------ R type execution section ------------#
-        if type == 'R':
+        if type_t == 'R':
             rd = data_holder[11:7]
             rs1 = data_holder[19:15]
             rs2 = data_holder[24:20]
@@ -418,7 +418,7 @@ class CPU:
 
         # ------------ I type execution section ------------#
 
-        if type == 'I1':
+        if type_t == 'I1':
             rd = data_holder[11:7]
             funct3 = data_holder[14:12]
             rs1 = data_holder[19:15]
@@ -443,7 +443,7 @@ class CPU:
             if funct3 == 0x3:
                 self.COMPARE(self.regs[rs1], imm, rd, 'le', False)
 
-        if type == 'I2':
+        if type_t == 'I2':
             rd = data_holder[11:7]
             funct3 = data_holder[14:12]
             rs1 = data_holder[19:15]
@@ -459,14 +459,14 @@ class CPU:
             if funct3 == 0x5:
                 self.LOAD(rd, rs1, imm, 2, False)
 
-        if type == 'I3':
+        if type_t == 'I3':
             rd = data_holder[11:7]
             funct3 = data_holder[14:12]
             rs1 = data_holder[19:15]
             imm = data_holder[31:20]
             self.JALR(rd, rs1, imm)
 
-        if type == 'I4':
+        if type_t == 'I4':
             rd = data_holder[11:7]
             funct3 = data_holder[14:12]
             rs1 = data_holder[19:15]
@@ -478,7 +478,7 @@ class CPU:
             # ------------ I type execution section ------------#
 
             # ------------ S type execution section ------------#
-        if type == 'S':
+        if type_t == 'S':
             rs1 = data_holder[19:15]
             rs2 = data_holder[24:20]
             buffer = []
@@ -507,7 +507,7 @@ class CPU:
             # ------------ S type execution section ------------#
 
             # ------------ B type execution section ------------#
-        if type == 'B':
+        if type_t == 'B':
             buffer = []
 
             buffer.append(0b0)
@@ -544,17 +544,17 @@ class CPU:
             # ------------ B type execution section ------------#
 
             # ------------ U type execution section ------------#
-        if type == 'U1':
+        if type_t == 'U1':
             rd = data_holder[11:7]
             imm = data_holder[31:12]
             self.LUI(rd, imm)
-        if type == 'U2':
+        if type_t == 'U2':
             rd = data_holder[11:7]
             imm = data_holder[31:12]
             self.AUIPC(rd, imm)
             # ------------ U type execution section ------------#
 
-        if type == 'J':
+        if type_t == 'J':
             rd = data_holder[11:7]
             buffer = []
             buffer.append(0b0)
