@@ -30,11 +30,11 @@ class Memory:
         """
         return bytearray() + self.mem[address]
 
-    # def readHalfWord(self, address: int) -> bytearray:
-    #     return bytearray(self.mem[address] + self.mem[address+1])
+    def readHalfWord(self, address: int) -> bytearray:
+        return bytearray(self.mem[address] + self.mem[address+1])
     
-    # def readWord(self, address: int) -> bytearray:
-    #     return bytearray(self.mem[address] + self.mem[address+1] + self.mem[address+2] + self.mem[address+3])
+    def readWord(self, address: int) -> bytearray:
+        return bytearray(self.mem[address] + self.mem[address+1] + self.mem[address+2] + self.mem[address+3])
 
     def readAsInt(self, address: int) -> int:
         # TODO check if valid address
