@@ -347,13 +347,13 @@ class CPU:
         elif opcode == 0b1110011:  # syscalls
             pass
 
-    def Fahd(self,memory_snippet):
+    def execution1(self,memory_snippet):
         # ----------------------------- test -----------------------------#
 
         # Here we have data an example of data fetched from memory
         memory = []
-        memory.append(0b00001111110000010000010100010111.to_bytes(4, byteorder='little'))
-        # four_byte=memory[0]
+        memory.append(memory.to_bytes(4, byteorder='little'))
+
         buffer_int = int.from_bytes(memory[0], 'little')
         data_holder = intbv(buffer_int)[32:0]
         rd = 0b0
@@ -364,9 +364,7 @@ class CPU:
         imm = 0b0
         imm1 = 0b0
         imm2 = 0b0
-        # memory has 4 bytes and the opcode will take the first byte that contains the opcode.
-        # opcode=four_byte[:1]
-        # binary_string = "{:08b}".format(int(opcode.hex(),16)) # change the format to a string showing the byte bits.
+
         key_opcodes = [0b0110011, 0b0010011, 0b0000011, 0b1100111, 0b1110011, 0b0100011, 0b1100011, 0b0110111,
                        0b0010111,
                        0b1101111]  # opcode for R I S B U J types.
@@ -400,10 +398,10 @@ class CPU:
                     type = 'B'
                 if i == 7:
                     print('Type is: ', 'U')
-                    type = 'U'
+                    type = 'U1'
                 if i == 8:
                     print('Type is: ', 'U')
-                    type = 'U'
+                    type = 'U2'
                 if i == 9:
                     print('Type is: ', 'J')
                     type = 'J'
@@ -418,28 +416,45 @@ class CPU:
             # look for the correct instruction via func3 and func7
             if funct3 == 0b000:
                 if funct7 == 0x0:
-                    self.ADD(rs1, rs2)
+                    self.ADD(self.regs[rs1],self.regs[rs2],rd)
                 if funct7 == 0x20:
-                    self.SUB(rs1,rs2)
+                    self.SUB(self.regs[rs1],self.regs[rs2],rd)
 
             if funct3 ==0x4 and funct7==0x0:
-                self.XOR(rs1,rs2)
+                self.XOR(self.regs[rs1],self.regs[rs2],rd)
             if funct3==0x6 and funct7==0x0:
-                self.OR(rs1,rs2)
+                self.OR(self.regs[rs1],self.regs[rs2],rd)
             if funct3==0x7 and funct7==0x0:
-                self.AND(rs1,rs2)
+                self.AND(self.regs[rs1],self.regs[rs2],rd)
             if funct3==0x1 and funct7==0x0:
-                self.SHIFT(rs1,rs2,'l')
+                self.SHIFT(self.regs[rs1],self.regs[rs2],rd,'l')
             if funct3==0x5 and funct7==0x0:
-                self.SHIFT(rs1,rs2)
+                self.SHIFT(self.regs[rs1],self.regs[rs2],rd)
             if funct3==0x5 and funct7==0x20:
-                self.SHIFT(rs1,rs2,'r',True)
+                self.SHIFT(self.regs[rs1],self.regs[rs2],rd,'r',True)
 
             if funct3 == 0x2 and funct7 == 0x0: # the execution method here is not yet added
                 print()
 
             if funct3 == 0x3 and funct7 == 0x0:# the execution method here is not yet added
                 print()
+
+            if funct3 == 0x0 and funct7 == 0x01:
+                self.MUL(self.regs[rs1],self.regs[rs2],rd)
+            if funct3 == 0x1 and funct7 == 0x01:
+                self.MUL(self.regs[rs1],self.regs[rs2],rd)
+            if funct3 == 0x2 and funct7 == 0x01:
+                self.MUL(self.regs[rs1],self.regs[rs2],'SU')
+            if funct3 == 0x3 and funct7 == 0x01:
+                self.MUL(self.regs[rs1],self.regs[rs2],'U')
+            if funct3 == 0x4 and funct7 == 0x01:
+                self.DIV(self.regs[rs1],self.regs[rs2],rd)
+            if funct3 == 0x5 and funct7 == 0x01:
+                self.DIV(self.regs[rs1],self.regs[rs2],rd,False)
+            if funct3 == 0x6 and funct7 == 0x01:
+                self.REM(self.regs[rs1],self.regs[rs2],rd)
+            if funct3 == 0x7 and funct7 == 0x01:
+                self.REM(self.regs[rs1],self.regs[rs2],rd,False)
         # ------------ R type execution section ------------#
 
         #------------ I type execution section ------------#
@@ -451,29 +466,57 @@ class CPU:
             imm=data_holder[31:20]
 
             if funct3 == 0x0:
-                self.ADD(rs1,imm)
+                self.ADD(rs1,imm,rd)
             if funct3 == 0x4:
-                self.XOR(rs1,imm)
+                self.XOR(rs1,imm,rd)
             if funct3 == 0x6:
-                self.OR(rs1,imm)
+                self.OR(rs1,imm,rd)
             if funct3 == 0x7:
-                self.AND(rs1,imm)
-            if funct3 == 0x1:
-                self.SHIFT()
-            print()
+                self.AND(rs1,imm,rd)
+            if funct3 == 0x1 and imm==0x0:
+                self.SHIFT(self.regs[rs1],imm,rd)
+            if funct3 == 0x5 and imm==0x0:
+                self.SHIFT(self.regs[rs1],imm,rd)
+            if funct3 == 0x5 and imm==0x20:
+                self.SHIFT(self.regs[rs1],imm,rd)
+            if funct3 == 0x2:
+                self.COMPARE(self.regs[rs1],imm,rd,'le')
+            if funct3 == 0x3:
+                self.COMPARE(self.regs[rs1],imm,rd,'le',False)
+
 
         if type == 'I2':
             rd = data_holder[11:7]
             funct3 = data_holder[14:12]
             rs1 = data_holder[19:15]
             imm = data_holder[31:20]
-
+            if funct3 == 0x0:
+                self.LOAD(rd,rs1,imm)
+            if funct3 == 0x1:
+                self.LOAD(rd,rs1,imm,2)
+            if funct3 == 0x2:
+                self.LOAD(rd,rs1,imm,4)
+            if funct3 == 0x4:
+                self.LOAD(rd,rs1,imm,False)
+            if funct3 == 0x5:
+                self.LOAD(rd,rs1,imm,2,False)
 
         if type =='I3':
-            print()
+            rd = data_holder[11:7]
+            funct3 = data_holder[14:12]
+            rs1 = data_holder[19:15]
+            imm = data_holder[31:20]
+            self.JALR(rd,rs1,imm)
 
         if type =='I4':
-            print()
+            rd = data_holder[11:7]
+            funct3 = data_holder[14:12]
+            rs1 = data_holder[19:15]
+            imm = data_holder[31:20]
+            if imm==0x0:
+                self.ecall()
+            if imm==0x1:
+                self.ebreak()
         # ------------ I type execution section ------------#
 
 
@@ -511,7 +554,7 @@ class CPU:
         if type=='B':
             buffer=[]
 
-            buffer.append(data_holder[8])
+            buffer.append(0b0)
             buffer.append(data_holder[9])
             buffer.append(data_holder[10])
             buffer.append(data_holder[11])
@@ -545,14 +588,45 @@ class CPU:
         # ------------ B type execution section ------------#
 
         # ------------ U type execution section ------------#
-        if type == 'U':
+        if type == 'U1':
             rd = data_holder[11:7]
             imm = data_holder[31:12]
             self.LUI(rd, imm)
+        if type == 'U2':
+            rd = data_holder[11:7]
+            imm = data_holder[31:12]
+            self.AUIPC(rd,imm)
         # ------------ U type execution section ------------#
 
         if type == 'J':
             rd=data_holder[11:7]
+            buffer=[]
+            buffer.append(0b0)
+            buffer.append(data_holder[22])
+            buffer.append(data_holder[23])
+            buffer.append(data_holder[24])
+            buffer.append(data_holder[25])
+            buffer.append(data_holder[26])
+            buffer.append(data_holder[27])
+            buffer.append(data_holder[28])
+            buffer.append(data_holder[29])
+            buffer.append(data_holder[30])
+            buffer.append(data_holder[20])
+            buffer.append(data_holder[12])
+            buffer.append(data_holder[13])
+            buffer.append(data_holder[14])
+            buffer.append(data_holder[15])
+            buffer.append(data_holder[16])
+            buffer.append(data_holder[17])
+            buffer.append(data_holder[18])
+            buffer.append(data_holder[19])
+            buffer.append(data_holder[31])
+            imm=intbv(buffer)
+            self.JAL(rd,imm)
+
+
+
+
 
 
 
@@ -564,16 +638,3 @@ class CPU:
 
 
 
-memory = []
-memory.append(0b00001111110000010000010100010111.to_bytes(4, byteorder='little'))
-# four_byte=memory[0]
-buffer_int = int.from_bytes(memory[0], 'little')
-data_holder = intbv(buffer_int)[32:0]
-print(data_holder[0]==0x1)
-th=[1,2,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32]
-print('start working!')
-buffer= []
-print(buffer)
-buffer.append(th[0:4])
-buffer.append(th[5:7])
-print(buffer)
