@@ -10,6 +10,7 @@ class CPU:
             3- Decode instructions
             4- Execute instructions
     """
+
     # Constructor of CPU
     def __init__(self):
         """
@@ -46,7 +47,7 @@ class CPU:
     # ------------------------------------------- Basic instructions ------------------------------------------- #
     # ------ These return, but don't update registers. updating regs is caller responsibility in this case ------ #
     def ADD(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
-        self.regs[rd] = arg1+arg2
+        self.regs[rd] = arg1 + arg2
         return arg1 + arg2
 
     def SUB(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
@@ -112,7 +113,6 @@ class CPU:
             self.regs[rd] = int(arg1 <= arg2)
         elif cond == "ge":
             self.regs[rd] = int(arg1 >= arg2)
-
 
     def MUL(self, arg1: intbv, arg2: intbv, rd, sign='S'):
         # I considered the notation (s)(u) to mean arg1 is signed, arg2 not signed
@@ -194,7 +194,7 @@ class CPU:
         # Loop, each time store one byte from src2 in the memory.
         for i in range(width):
             store_byte = src2[i].to_bytes(1, 'little')
-            self.test_mem.write(target_address+i, store_byte)
+            self.test_mem.write(target_address + i, store_byte)
 
     # -------------------------- Branch Instructions -------------------------- #
     def BRANCH(self, rs1, rs2, imm: intbv, cond='e', signed=True):
@@ -238,7 +238,7 @@ class CPU:
         Returns:
         """
         # First, shift the immediate to left once to multiply by 2
-        imm = imm<<1
+        imm = imm << 1
         imm = intbv(imm)[21:0]
         self.regs[rd] = self.pc + 4  # Save return address in rd
         self.pc += imm  # jump
@@ -252,7 +252,7 @@ class CPU:
             imm: immediate value, serves as offset. Usually 0
         Returns: None
         """
-        self.regs[rd] = self.pc+4
+        self.regs[rd] = self.pc + 4
         self.pc = self.regs[rs1] + imm
 
     # -------------------------- Instructions with large immediate -------------------------- #
@@ -292,10 +292,9 @@ class CPU:
     def ebreak(self):
         pass
 
-    # TODO: Following function was to be replaced by many functions, for each format (for example exc_R) ...
-    #  ... but I decided to change that structure a bit and made functions for each major operation.
-    #  this function now serves no purpose but its content can be used somewhere else. Consider deleting it later.
-
+        # TODO: Following function was to be replaced by many functions, for each format (for example exc_R) ...
+        #  ... but I decided to change that structure a bit and made functions for each major operation.
+        #  this function now serves no purpose but its content can be used somewhere else. Consider deleting it later.
 
         #  Below lines for testing
         tst_regs = [0 for i in range(32)]
@@ -366,7 +365,7 @@ class CPU:
                     print('Type is: ', 'J')
                     type = 'J'
 
-        #------------ R type execution section ------------#
+        # ------------ R type execution section ------------#
         if type == 'R':
             rd = data_holder[11:7]
             rs1 = data_holder[19:15]
@@ -376,74 +375,73 @@ class CPU:
             # look for the correct instruction via func3 and func7
             if funct3 == 0b000:
                 if funct7 == 0x0:
-                    self.ADD(self.regs[rs1],self.regs[rs2],rd)
+                    self.ADD(self.regs[rs1], self.regs[rs2], rd)
                 if funct7 == 0x20:
-                    self.SUB(self.regs[rs1],self.regs[rs2],rd)
+                    self.SUB(self.regs[rs1], self.regs[rs2], rd)
 
-            if funct3 ==0x4 and funct7==0x0:
-                self.XOR(self.regs[rs1],self.regs[rs2],rd)
-            if funct3==0x6 and funct7==0x0:
-                self.OR(self.regs[rs1],self.regs[rs2],rd)
-            if funct3==0x7 and funct7==0x0:
-                self.AND(self.regs[rs1],self.regs[rs2],rd)
-            if funct3==0x1 and funct7==0x0:
-                self.SHIFT(self.regs[rs1],self.regs[rs2],rd,'l')
-            if funct3==0x5 and funct7==0x0:
-                self.SHIFT(self.regs[rs1],self.regs[rs2],rd)
-            if funct3==0x5 and funct7==0x20:
-                self.SHIFT(self.regs[rs1],self.regs[rs2],rd,'r',True)
+            if funct3 == 0x4 and funct7 == 0x0:
+                self.XOR(self.regs[rs1], self.regs[rs2], rd)
+            if funct3 == 0x6 and funct7 == 0x0:
+                self.OR(self.regs[rs1], self.regs[rs2], rd)
+            if funct3 == 0x7 and funct7 == 0x0:
+                self.AND(self.regs[rs1], self.regs[rs2], rd)
+            if funct3 == 0x1 and funct7 == 0x0:
+                self.SHIFT(self.regs[rs1], self.regs[rs2], rd, 'l')
+            if funct3 == 0x5 and funct7 == 0x0:
+                self.SHIFT(self.regs[rs1], self.regs[rs2], rd)
+            if funct3 == 0x5 and funct7 == 0x20:
+                self.SHIFT(self.regs[rs1], self.regs[rs2], rd, 'r', True)
 
-            if funct3 == 0x2 and funct7 == 0x0: # the execution method here is not yet added
+            if funct3 == 0x2 and funct7 == 0x0:  # the execution method here is not yet added
                 print()
 
-            if funct3 == 0x3 and funct7 == 0x0:# the execution method here is not yet added
+            if funct3 == 0x3 and funct7 == 0x0:  # the execution method here is not yet added
                 print()
 
             if funct3 == 0x0 and funct7 == 0x01:
-                self.MUL(self.regs[rs1],self.regs[rs2],rd)
+                self.MUL(self.regs[rs1], self.regs[rs2], rd)
             if funct3 == 0x1 and funct7 == 0x01:
-                self.MUL(self.regs[rs1],self.regs[rs2],rd)
+                self.MUL(self.regs[rs1], self.regs[rs2], rd)
             if funct3 == 0x2 and funct7 == 0x01:
-                self.MUL(self.regs[rs1],self.regs[rs2],'SU')
+                self.MUL(self.regs[rs1], self.regs[rs2], 'SU')
             if funct3 == 0x3 and funct7 == 0x01:
-                self.MUL(self.regs[rs1],self.regs[rs2],'U')
+                self.MUL(self.regs[rs1], self.regs[rs2], 'U')
             if funct3 == 0x4 and funct7 == 0x01:
-                self.DIV(self.regs[rs1],self.regs[rs2],rd)
+                self.DIV(self.regs[rs1], self.regs[rs2], rd)
             if funct3 == 0x5 and funct7 == 0x01:
-                self.DIV(self.regs[rs1],self.regs[rs2],rd,False)
+                self.DIV(self.regs[rs1], self.regs[rs2], rd, False)
             if funct3 == 0x6 and funct7 == 0x01:
-                self.REM(self.regs[rs1],self.regs[rs2],rd)
+                self.REM(self.regs[rs1], self.regs[rs2], rd)
             if funct3 == 0x7 and funct7 == 0x01:
-                self.REM(self.regs[rs1],self.regs[rs2],rd,False)
+                self.REM(self.regs[rs1], self.regs[rs2], rd, False)
         # ------------ R type execution section ------------#
 
-        #------------ I type execution section ------------#
+        # ------------ I type execution section ------------#
 
         if type == 'I1':
-            rd=data_holder[11:7]
-            funct3=data_holder[14:12]
-            rs1=data_holder[19:15]
-            imm=data_holder[31:20]
+            rd = data_holder[11:7]
+            funct3 = data_holder[14:12]
+            rs1 = data_holder[19:15]
+            imm = data_holder[31:20]
 
             if funct3 == 0x0:
-                self.ADD(rs1,imm,rd)
+                self.ADD(rs1, imm, rd)
             if funct3 == 0x4:
-                self.XOR(rs1,imm,rd)
+                self.XOR(rs1, imm, rd)
             if funct3 == 0x6:
-                self.OR(rs1,imm,rd)
+                self.OR(rs1, imm, rd)
             if funct3 == 0x7:
-                self.AND(rs1,imm,rd)
-            if funct3 == 0x1 and imm==0x0:
-                self.SHIFT(self.regs[rs1],imm,rd)
-            if funct3 == 0x5 and imm==0x0:
-                self.SHIFT(self.regs[rs1],imm,rd)
-            if funct3 == 0x5 and imm==0x20:
-                self.SHIFT(self.regs[rs1],imm,rd)
+                self.AND(rs1, imm, rd)
+            if funct3 == 0x1 and imm == 0x0:
+                self.SHIFT(self.regs[rs1], imm, rd)
+            if funct3 == 0x5 and imm == 0x0:
+                self.SHIFT(self.regs[rs1], imm, rd)
+            if funct3 == 0x5 and imm == 0x20:
+                self.SHIFT(self.regs[rs1], imm, rd)
             if funct3 == 0x2:
-                self.COMPARE(self.regs[rs1],imm,rd,'le')
+                self.COMPARE(self.regs[rs1], imm, rd, 'le')
             if funct3 == 0x3:
-                self.COMPARE(self.regs[rs1],imm,rd,'le',False)
-
+                self.COMPARE(self.regs[rs1], imm, rd, 'le', False)
 
         if type == 'I2':
             rd = data_holder[11:7]
@@ -451,15 +449,15 @@ class CPU:
             rs1 = data_holder[19:15]
             imm = data_holder[31:20]
             if funct3 == 0x0:
-                self.LOAD(rd,rs1,imm)
+                self.LOAD(rd, rs1, imm)
             if funct3 == 0x1:
-                self.LOAD(rd,rs1,imm,2)
+                self.LOAD(rd, rs1, imm, 2)
             if funct3 == 0x2:
-                self.LOAD(rd,rs1,imm,4)
+                self.LOAD(rd, rs1, imm, 4)
             if funct3 == 0x4:
-                self.LOAD(rd,rs1,imm,False)
+                self.LOAD(rd, rs1, imm, False)
             if funct3 == 0x5:
-                self.LOAD(rd,rs1,imm,2,False)
+                self.LOAD(rd, rs1, imm, 2, False)
 
         if type == 'I3':
             rd = data_holder[11:7]
@@ -584,20 +582,19 @@ class CPU:
 
 
 if __name__ == '__main__':
-
     # Testing area:
     x = CPU()
 
     reg = [intbv(0)[32:0] for i in range(32)]
     print("==================")
     print(reg[intbv(4)])
-    #x.exc_arithmetic(0,0)
+    # x.exc_arithmetic(0,0)
     y = 5
     ar = bytearray(5)
     ar[1] = 255
     print(ar[1])
     print(ar)
-    print(x)# Notes:
+    print(x)  # Notes:
     # We can use bytearray indices as numbers. for example if x is a bytearray, we can access like
     # x[3] -> will return the fourth byte in the array. Just like normal arrays. it will be returned as integer.
     # We can also manipulate it like integer or bits. It is acutally binary. we can do x[3] & 0b0001 or
@@ -608,14 +605,10 @@ if __name__ == '__main__':
     #       ... we can also define number of bits instead of min and max. this will also work
     # 2-    y = x.signed() -> returns -4
     # If we didn't define min and max in x, then y will return 12.
-            # ----------------------------- test -----------------------------#
-
-
-
-
+    # ----------------------------- test -----------------------------#
 
     x = list()
-    x.append(0b00001111110000010000010100010111.to_bytes(4,byteorder='little'))  # store instruction as little endian
+    x.append(0b00001111110000010000010100010111.to_bytes(4, byteorder='little'))  # store instruction as little endian
     print(x[0])  # x[0] contains a 4 bytes stored as (byte) data type.
     xint = int.from_bytes(x[0], 'little')  # convert x[0] from type byte into integer type.
     ibv1 = intbv(xint)[32:0]  # convert xint into intbv
@@ -623,4 +616,4 @@ if __name__ == '__main__':
 
     print("========================")
     ibv = intbv('111111000001000001010001')[24:0]
-    print(ibv.signed()+1)
+    print(ibv.signed() + 1)
