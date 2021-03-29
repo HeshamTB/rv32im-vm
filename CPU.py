@@ -1,6 +1,6 @@
 from myhdl import intbv, bin
 from mem import Memory
-import syscalls
+
 
 class CPU:
     """
@@ -45,26 +45,22 @@ class CPU:
     # TODO: 3-Currently we use ADD, SUB, SHIFT etc in other places. Think if eliminating this is useful or the opposite
     # ------------------------------------------- Basic instructions ------------------------------------------- #
     # ------ These return, but don't update registers. updating regs is caller responsibility in this case ------ #
-    def ADD(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
-        self.regs[rd] = arg1+arg2
+    def ADD(self, arg1: intbv, arg2: intbv) -> int:
         return arg1 + arg2
 
-    def SUB(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
-        return self.ADD(arg1, -arg2, rd)
+    def SUB(self, arg1: intbv, arg2: intbv) -> int:
+        return self.ADD(arg1, -arg2)
 
-    def OR(self, arg1, arg2, rd):
-        self.regs[rd] = arg1 | arg2
+    def OR(self, arg1, arg2):
         return arg1 | arg2
 
-    def XOR(self, arg1, arg2, rd):
-        self.regs[rd] = arg1 ^ arg2
+    def XOR(self, arg1, arg2):
         return arg1 ^ arg2
 
-    def AND(self, arg1, arg2, rd):
-        self.regs[rd] = arg1 & arg2
+    def AND(self, arg1, arg2):
         return arg1 & arg2
 
-    def SHIFT(self, arg1: intbv, arg2: intbv, rd, dir='r', signed=False):  # needs testing
+    def SHIFT(self, arg1: intbv, arg2: intbv, dir='r', signed=False):  # needs testing
         """
         Shifts arg1 by amount of arg2
         Args:
@@ -76,22 +72,19 @@ class CPU:
         """
         if dir == "r":
             if signed:
-                self.regs[rd] = arg1.signed() >> arg2.signed()
                 return arg1.signed() >> arg2.signed()
             else:
-                self.regs[rd] = arg1 >> arg2
                 return arg1 >> arg2  # arg1 is not signed number
         elif dir == "l":
-            self.regs[rd] = arg1 << arg2
             return arg1 << arg2
 
-    def COMPARE(self, arg1: intbv, arg2: intbv, rd, cond="e", signed=True):
+    def COMPARE(self, arg1: intbv, arg2: intbv, cond="e", signed=True):
         """
         Comapre arg1 and arg2.
         Args:
             arg1: first argument
             arg2: second argument
-            cond: comparison condition. e for equal, l for less, and g for greater, le for <=, ge for >=.
+            cond: comparison condition. e for equal, l for less, and g for greater.
             signed: Boolean flag for sign. By default is True. Set to False in case inputs are unsigned
         Returns: Boolean. indicates whether comparison result is true or false
         """
@@ -100,46 +93,31 @@ class CPU:
             arg2 = arg2.signed()
         # Check the conditions
         if cond == "e":
-            self.regs[rd] = int(arg1 == arg2)
             return arg1 == arg2
         elif cond == "l":
-            self.regs[rd] = int(arg1 < arg2)
             return arg1 < arg2
         elif cond == "g":
-            self.regs[rd] = int(arg1 > arg2)
             return arg1 > arg2
-        elif cond == "le":
-            self.regs[rd] = int(arg1 <= arg2)
-        elif cond == "ge":
-            self.regs[rd] = int(arg1 >= arg2)
 
-
-    def MUL(self, arg1: intbv, arg2: intbv, rd, sign='S'):
+    def MUL(self, arg1: intbv, arg2: intbv, sign='S'):
         # I considered the notation (s)(u) to mean arg1 is signed, arg2 not signed
         if sign.capitalize() == 'SU':
-            self.regs[rd] = arg1.signed() * arg2.unsigned()
             return arg1.signed() * arg2.unsigned()
         elif sign.capitalize() == 'U':
-            self.regs[rd] = arg1 * arg2
             return arg1 * arg2
         elif sign.capitalize() == 'S':
-            self.regs[rd] = arg1.signed() * arg2.signed()
             return arg1.signed() * arg2.signed()
         else:
             print("Error: condition " + sign + " is not defined for MUL function")
 
-    def DIV(self, arg1: intbv, arg2: intbv, rd, signed=True):
+    def DIV(self, arg1: intbv, arg2: intbv, signed=True):
         if signed:
-            self.regs[rd] = arg1.signed() // arg2.signed()
             return arg1.signed() // arg2.signed()
-        self.regs[rd] = arg1 // arg2
         return arg1 // arg2
 
-    def REM(self, arg1: intbv, arg2: intbv, rd, signed=True):
+    def REM(self, arg1: intbv, arg2: intbv, signed=True):
         if signed:
-            self.regs[rd] = arg1.signed() % arg2.signed()
-            return arg1.signed() % arg2.signed()
-        self.regs[rd] = arg1 % arg2
+            arg1.signed() % arg2.signed()
         return arg1 % arg2
 
     # -------------------------- instructions of load -------------------------- #
@@ -159,7 +137,7 @@ class CPU:
         if signed:
             imm = imm.signed()
         src = intbv(self.regs[rs1])[32:0]
-        target_address = src + imm
+        target_address = self.ADD(imm, src)
         loaded_bytes = None
         if width == 1:
             loaded_bytes = self.test_mem.read(target_address)
@@ -190,7 +168,7 @@ class CPU:
 
         src1 = intbv(self.regs[rs1])[32:0]
         src2 = self.regs[rs2].to_bytes(width, 'little')
-        target_address = imm + src1
+        target_address = self.ADD(imm, src1)
         # Loop, each time store one byte from src2 in the memory.
         for i in range(width):
             store_byte = src2[i].to_bytes(1, 'little')
@@ -215,13 +193,13 @@ class CPU:
             val1 = val1.signed()
             val2 = val2.signed()
         if cond == 'e':
-            res = val1 == val2
+            res = self.COMPARE(val1, val2, cond='e', signed=signed)
         elif cond == 'ne':
-            res = not (val1 == val2)
+            res = not self.COMPARE(val1, val2, cond='e', signed=signed)
         elif cond == 'lt':
-            res = val1 < val2
+            res = self.COMPARE(val1, val2, cond='l', signed=signed)
         elif cond == 'ge':
-            res = val1 >= val2
+            res = self.COMPARE(val1, val2, cond='g', signed=signed) or self.COMPARE(val1, val2, cond='e', signed=signed)
         else:
             print("Error: Please enter valid comparison condition")
 
@@ -287,7 +265,6 @@ class CPU:
     # -------------------------- System calls -------------------------- #
     # TODO: Implement system calls.
     def ecall(self):
-        #syscalls.handle(self.regs, mem)
         pass
 
     def ebreak(self):
@@ -309,6 +286,159 @@ class CPU:
         #  End of testing area
 
 
+    def execution1(self,memory_snippet):
+        # ----------------------------- test -----------------------------#
+
+        # Here we have data an example of data fetched from memory
+        memory = []
+        memory.append(memory.to_bytes(4, byteorder='little'))
+
+        buffer_int = int.from_bytes(memory[0], 'little')
+        data_holder = intbv(buffer_int)[32:0]
+        rd = 0b0
+        rs1 = 0b0
+        rs2 = 0b0
+        funct3 = 0b0
+        funct7 = 0b0
+        imm = 0b0
+        imm1 = 0b0
+        imm2 = 0b0
+
+        key_opcodes = [0b0110011, 0b0010011, 0b0000011, 0b1100111, 0b1110011, 0b0100011, 0b1100011, 0b0110111,
+                       0b0010111,
+                       0b1101111]  # opcode for R I S B U J types.
+
+        type = ''
+
+        for i in range(len(key_opcodes)):
+            if data_holder[6:0] == key_opcodes[i]:
+                print('match found')
+
+                if i == 0:
+                    print('Type is: ', 'R')
+                    type = 'R'
+                if i == 1:
+                    print('Type is: ', 'I')
+                    type = 'I1'
+                if i == 2:
+                    print('Type is: ', 'I')
+                    type = 'I2'
+                if i == 3:
+                    print('Type is: ', 'I')
+                    type = 'I3'
+                if i == 4:
+                    print('Type is: ', 'I')
+                    type = 'I4'
+                if i == 5:
+                    print('Type is: ', 'S')
+                    type = 'S'
+                if i == 6:
+                    print('Type is: ', 'B')
+                    type = 'B'
+                if i == 7:
+                    print('Type is: ', 'U')
+                    type = 'U1'
+                if i == 8:
+                    print('Type is: ', 'U')
+                    type = 'U2'
+                if i == 9:
+                    print('Type is: ', 'J')
+                    type = 'J'
+
+        #------------ R type execution section ------------#
+        if type == 'R':
+            rd = data_holder[11:7]
+            rs1 = data_holder[19:15]
+            rs2 = data_holder[24:20]
+            funct3 = data_holder[14:12]
+            funct7 = data_holder[31:25]
+            # look for the correct instruction via func3 and func7
+            if funct3 == 0b000:
+                if funct7 == 0x0:
+                    self.ADD(self.regs[rs1],self.regs[rs2],rd)
+                if funct7 == 0x20:
+                    self.SUB(self.regs[rs1],self.regs[rs2],rd)
+
+            if funct3 ==0x4 and funct7==0x0:
+                self.XOR(self.regs[rs1],self.regs[rs2],rd)
+            if funct3==0x6 and funct7==0x0:
+                self.OR(self.regs[rs1],self.regs[rs2],rd)
+            if funct3==0x7 and funct7==0x0:
+                self.AND(self.regs[rs1],self.regs[rs2],rd)
+            if funct3==0x1 and funct7==0x0:
+                self.SHIFT(self.regs[rs1],self.regs[rs2],rd,'l')
+            if funct3==0x5 and funct7==0x0:
+                self.SHIFT(self.regs[rs1],self.regs[rs2],rd)
+            if funct3==0x5 and funct7==0x20:
+                self.SHIFT(self.regs[rs1],self.regs[rs2],rd,'r',True)
+
+            if funct3 == 0x2 and funct7 == 0x0: # the execution method here is not yet added
+                print()
+
+            if funct3 == 0x3 and funct7 == 0x0:# the execution method here is not yet added
+                print()
+
+            if funct3 == 0x0 and funct7 == 0x01:
+                self.MUL(self.regs[rs1],self.regs[rs2],rd)
+            if funct3 == 0x1 and funct7 == 0x01:
+                self.MUL(self.regs[rs1],self.regs[rs2],rd)
+            if funct3 == 0x2 and funct7 == 0x01:
+                self.MUL(self.regs[rs1],self.regs[rs2],'SU')
+            if funct3 == 0x3 and funct7 == 0x01:
+                self.MUL(self.regs[rs1],self.regs[rs2],'U')
+            if funct3 == 0x4 and funct7 == 0x01:
+                self.DIV(self.regs[rs1],self.regs[rs2],rd)
+            if funct3 == 0x5 and funct7 == 0x01:
+                self.DIV(self.regs[rs1],self.regs[rs2],rd,False)
+            if funct3 == 0x6 and funct7 == 0x01:
+                self.REM(self.regs[rs1],self.regs[rs2],rd)
+            if funct3 == 0x7 and funct7 == 0x01:
+                self.REM(self.regs[rs1],self.regs[rs2],rd,False)
+        # ------------ R type execution section ------------#
+
+        #------------ I type execution section ------------#
+
+        if type == 'I1':
+            rd=data_holder[11:7]
+            funct3=data_holder[14:12]
+            rs1=data_holder[19:15]
+            imm=data_holder[31:20]
+
+            if funct3 == 0x0:
+                self.ADD(rs1,imm,rd)
+            if funct3 == 0x4:
+                self.XOR(rs1,imm,rd)
+            if funct3 == 0x6:
+                self.OR(rs1,imm,rd)
+            if funct3 == 0x7:
+                self.AND(rs1,imm,rd)
+            if funct3 == 0x1 and imm==0x0:
+                self.SHIFT(self.regs[rs1],imm,rd)
+            if funct3 == 0x5 and imm==0x0:
+                self.SHIFT(self.regs[rs1],imm,rd)
+            if funct3 == 0x5 and imm==0x20:
+                self.SHIFT(self.regs[rs1],imm,rd)
+            if funct3 == 0x2:
+                self.COMPARE(self.regs[rs1],imm,rd,'le')
+            if funct3 == 0x3:
+                self.COMPARE(self.regs[rs1],imm,rd,'le',False)
+
+
+        if type == 'I2':
+            rd = data_holder[11:7]
+            funct3 = data_holder[14:12]
+            rs1 = data_holder[19:15]
+            imm = data_holder[31:20]
+            if funct3 == 0x0:
+                self.LOAD(rd,rs1,imm)
+            if funct3 == 0x1:
+                self.LOAD(rd,rs1,imm,2)
+            if funct3 == 0x2:
+                self.LOAD(rd,rs1,imm,4)
+            if funct3 == 0x4:
+                self.LOAD(rd,rs1,imm,False)
+            if funct3 == 0x5:
+                self.LOAD(rd,rs1,imm,2,False)
 
 # Testing area:
 x = CPU()
@@ -327,15 +457,142 @@ print(x)# Notes:
 # x[3] -> will return the fourth byte in the array. Just like normal arrays. it will be returned as integer.
 # We can also manipulate it like integer or bits. It is acutally binary. we can do x[3] & 0b0001 or
 # x[3] = y + 4 or any other operation, and it will be stored back as a byte.
+        if type =='I3':
+            rd = data_holder[11:7]
+            funct3 = data_holder[14:12]
+            rs1 = data_holder[19:15]
+            imm = data_holder[31:20]
+            self.JALR(rd,rs1,imm)
 
-# also note that we can use intbv for slicing
+        if type =='I4':
+            rd = data_holder[11:7]
+            funct3 = data_holder[14:12]
+            rs1 = data_holder[19:15]
+            imm = data_holder[31:20]
+            if imm==0x0:
+                self.ecall()
+            if imm==0x1:
+                self.ebreak()
+        # ------------ I type execution section ------------#
 
-# ----- intbv notes ----- #
-# if you want to store 0b1100 as signed number (should be -4 not 12) then you must do the following:
-# 1-    x = intbv(0b1100, min=0, max=16) -> note that we defined min and max. this is a must. alternativly,
-#       ... we can also define number of bits instead of min and max. this will also work
-# 2-    y = x.signed() -> returns -4
-# If we didn't define min and max in x, then y will return 12.
+
+
+        # ------------ S type execution section ------------#
+        if type == 'S':
+            rs1=data_holder[19:15]
+            rs2=data_holder[24:20]
+            buffer=[]
+            buffer.append(data_holder[7])
+            buffer.append(data_holder[8])
+            buffer.append(data_holder[9])
+            buffer.append(data_holder[10])
+            buffer.append(data_holder[11])
+            buffer.append(data_holder[25])
+            buffer.append(data_holder[26])
+            buffer.append(data_holder[27])
+            buffer.append(data_holder[28])
+            buffer.append(data_holder[29])
+            buffer.append(data_holder[30])
+            buffer.append(data_holder[31])
+
+            imm = intbv(buffer)[32:0]
+            # change the imm to intbv
+            if funct3 == 0x0:
+                self.STORE(rs1,rs2,imm)
+            if funct3 == 0x1:
+                self.STORE(rs1,rs2,imm,2)
+            if funct3 == 0x2:
+                self.STORE(rs1,rs2,imm,4)
+
+        # ------------ S type execution section ------------#
+
+        # ------------ B type execution section ------------#
+        if type=='B':
+            buffer=[]
+
+            buffer.append(0b0)
+            buffer.append(data_holder[9])
+            buffer.append(data_holder[10])
+            buffer.append(data_holder[11])
+            buffer.append(data_holder[25]) # 10:5
+            buffer.append(data_holder[26])
+            buffer.append(data_holder[27])
+            buffer.append(data_holder[28])
+            buffer.append(data_holder[29])
+            buffer.append(data_holder[30])
+            buffer.append(data_holder[7])
+            buffer.append(data_holder[31])
+            #must make the intbv arg as an int
+
+            imm = intbv(buffer)[32:0]
+            funct3 = data_holder[14:12]
+            rs1 = data_holder[19:15]
+            rs2 = data_holder[24:20]
+
+            if funct3 == 0x0:
+                self.BRANCH(rs1,rs2,imm,'e')
+            if funct3 == 0x1:
+                self.BRANCH(rs1,rs2,imm,'ne')
+            if funct3 == 0x4:
+                self.BRANCH(rs1,rs2,imm,'lt')
+            if funct3 == 0x5:
+                self.BRANCH(rs1,rs2,imm,'ge')
+            if funct3 == 0x6:
+                self.BRANCH(rs1,rs2,imm,'lt',False)
+            if funct3 == 0x7:
+                self.BRANCH(rs1,rs2,imm,'ge',False)
+        # ------------ B type execution section ------------#
+
+        # ------------ U type execution section ------------#
+        if type == 'U1':
+            rd = data_holder[11:7]
+            imm = data_holder[31:12]
+            self.LUI(rd, imm)
+        if type == 'U2':
+            rd = data_holder[11:7]
+            imm = data_holder[31:12]
+            self.AUIPC(rd,imm)
+        # ------------ U type execution section ------------#
+
+        if type == 'J':
+            rd=data_holder[11:7]
+            buffer=[]
+            buffer.append(0b0)
+            buffer.append(data_holder[22])
+            buffer.append(data_holder[23])
+            buffer.append(data_holder[24])
+            buffer.append(data_holder[25])
+            buffer.append(data_holder[26])
+            buffer.append(data_holder[27])
+            buffer.append(data_holder[28])
+            buffer.append(data_holder[29])
+            buffer.append(data_holder[30])
+            buffer.append(data_holder[20])
+            buffer.append(data_holder[12])
+            buffer.append(data_holder[13])
+            buffer.append(data_holder[14])
+            buffer.append(data_holder[15])
+            buffer.append(data_holder[16])
+            buffer.append(data_holder[17])
+            buffer.append(data_holder[18])
+            buffer.append(data_holder[19])
+            buffer.append(data_holder[31])
+            imm=intbv(buffer)
+            self.JAL(rd,imm)
+
+
+
+
+
+
+
+
+
+
+        # ----------------------------- test -----------------------------#
+
+
+
 
 
 x = list()
