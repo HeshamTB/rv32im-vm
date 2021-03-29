@@ -45,22 +45,26 @@ class CPU:
     # TODO: 3-Currently we use ADD, SUB, SHIFT etc in other places. Think if eliminating this is useful or the opposite
     # ------------------------------------------- Basic instructions ------------------------------------------- #
     # ------ These return, but don't update registers. updating regs is caller responsibility in this case ------ #
-    def ADD(self, arg1: intbv, arg2: intbv) -> int:
+    def ADD(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
+        self.regs[rd] = arg1+arg2
         return arg1 + arg2
 
-    def SUB(self, arg1: intbv, arg2: intbv) -> int:
-        return self.ADD(arg1, -arg2)
+    def SUB(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
+        return self.ADD(arg1, -arg2, rd)
 
-    def OR(self, arg1, arg2):
+    def OR(self, arg1, arg2, rd):
+        self.regs[rd] = arg1 | arg2
         return arg1 | arg2
 
-    def XOR(self, arg1, arg2):
+    def XOR(self, arg1, arg2, rd):
+        self.regs[rd] = arg1 ^ arg2
         return arg1 ^ arg2
 
-    def AND(self, arg1, arg2):
+    def AND(self, arg1, arg2, rd):
+        self.regs[rd] = arg1 & arg2
         return arg1 & arg2
 
-    def SHIFT(self, arg1: intbv, arg2: intbv, dir='r', signed=False):  # needs testing
+    def SHIFT(self, arg1: intbv, arg2: intbv, rd, dir='r', signed=False):  # needs testing
         """
         Shifts arg1 by amount of arg2
         Args:
@@ -72,19 +76,22 @@ class CPU:
         """
         if dir == "r":
             if signed:
+                self.regs[rd] = arg1.signed() >> arg2.signed()
                 return arg1.signed() >> arg2.signed()
             else:
+                self.regs[rd] = arg1 >> arg2
                 return arg1 >> arg2  # arg1 is not signed number
         elif dir == "l":
+            self.regs[rd] = arg1 << arg2
             return arg1 << arg2
 
-    def COMPARE(self, arg1: intbv, arg2: intbv, cond="e", signed=True):
+    def COMPARE(self, arg1: intbv, arg2: intbv, rd, cond="e", signed=True):
         """
         Comapre arg1 and arg2.
         Args:
             arg1: first argument
             arg2: second argument
-            cond: comparison condition. e for equal, l for less, and g for greater.
+            cond: comparison condition. e for equal, l for less, and g for greater, le for <=, ge for >=.
             signed: Boolean flag for sign. By default is True. Set to False in case inputs are unsigned
         Returns: Boolean. indicates whether comparison result is true or false
         """
@@ -93,31 +100,46 @@ class CPU:
             arg2 = arg2.signed()
         # Check the conditions
         if cond == "e":
+            self.regs[rd] = int(arg1 == arg2)
             return arg1 == arg2
         elif cond == "l":
+            self.regs[rd] = int(arg1 < arg2)
             return arg1 < arg2
         elif cond == "g":
+            self.regs[rd] = int(arg1 > arg2)
             return arg1 > arg2
+        elif cond == "le":
+            self.regs[rd] = int(arg1 <= arg2)
+        elif cond == "ge":
+            self.regs[rd] = int(arg1 >= arg2)
 
-    def MUL(self, arg1: intbv, arg2: intbv, sign='S'):
+
+    def MUL(self, arg1: intbv, arg2: intbv, rd, sign='S'):
         # I considered the notation (s)(u) to mean arg1 is signed, arg2 not signed
         if sign.capitalize() == 'SU':
+            self.regs[rd] = arg1.signed() * arg2.unsigned()
             return arg1.signed() * arg2.unsigned()
         elif sign.capitalize() == 'U':
+            self.regs[rd] = arg1 * arg2
             return arg1 * arg2
         elif sign.capitalize() == 'S':
+            self.regs[rd] = arg1.signed() * arg2.signed()
             return arg1.signed() * arg2.signed()
         else:
             print("Error: condition " + sign + " is not defined for MUL function")
 
-    def DIV(self, arg1: intbv, arg2: intbv, signed=True):
+    def DIV(self, arg1: intbv, arg2: intbv, rd, signed=True):
         if signed:
+            self.regs[rd] = arg1.signed() // arg2.signed()
             return arg1.signed() // arg2.signed()
+        self.regs[rd] = arg1 // arg2
         return arg1 // arg2
 
-    def REM(self, arg1: intbv, arg2: intbv, signed=True):
+    def REM(self, arg1: intbv, arg2: intbv, rd, signed=True):
         if signed:
-            arg1.signed() % arg2.signed()
+            self.regs[rd] = arg1.signed() % arg2.signed()
+            return arg1.signed() % arg2.signed()
+        self.regs[rd] = arg1 % arg2
         return arg1 % arg2
 
     # -------------------------- instructions of load -------------------------- #
@@ -137,7 +159,7 @@ class CPU:
         if signed:
             imm = imm.signed()
         src = intbv(self.regs[rs1])[32:0]
-        target_address = self.ADD(imm, src)
+        target_address = src + imm
         loaded_bytes = None
         if width == 1:
             loaded_bytes = self.test_mem.read(target_address)
@@ -168,7 +190,7 @@ class CPU:
 
         src1 = intbv(self.regs[rs1])[32:0]
         src2 = self.regs[rs2].to_bytes(width, 'little')
-        target_address = self.ADD(imm, src1)
+        target_address = imm + src1
         # Loop, each time store one byte from src2 in the memory.
         for i in range(width):
             store_byte = src2[i].to_bytes(1, 'little')
@@ -193,13 +215,13 @@ class CPU:
             val1 = val1.signed()
             val2 = val2.signed()
         if cond == 'e':
-            res = self.COMPARE(val1, val2, cond='e', signed=signed)
+            res = val1 == val2
         elif cond == 'ne':
-            res = not self.COMPARE(val1, val2, cond='e', signed=signed)
+            res = not (val1 == val2)
         elif cond == 'lt':
-            res = self.COMPARE(val1, val2, cond='l', signed=signed)
+            res = val1 < val2
         elif cond == 'ge':
-            res = self.COMPARE(val1, val2, cond='g', signed=signed) or self.COMPARE(val1, val2, cond='e', signed=signed)
+            res = val1 >= val2
         else:
             print("Error: Please enter valid comparison condition")
 
@@ -285,13 +307,12 @@ class CPU:
         rs2 = int.to_bytes(0b00101, 1, 'little')
         #  End of testing area
 
-
-    def execution1(self,memory_snippet):
+    def execution1(self, memory_snippet):
         # ----------------------------- test -----------------------------#
 
         # Here we have data an example of data fetched from memory
         memory = []
-        memory.append(memory.to_bytes(4, byteorder='little'))
+        memory.append(memory_snippet.to_bytes(4, byteorder='little'))
 
         buffer_int = int.from_bytes(memory[0], 'little')
         data_holder = intbv(buffer_int)[32:0]
