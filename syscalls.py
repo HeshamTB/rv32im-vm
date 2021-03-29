@@ -19,11 +19,11 @@ def handle(regs: list[intbv], mem: Memory):
     elif regs[17] == 0:
         exit_val = regs[10] # Exit code in a0, x10. could be signed
         sys_exit(exit_val)
-    else
+    else:
         # Unimplemented req
         pass
 
-def sys_print(stream: int = 0, data):
+def sys_print(data, stream: int = 0):
     # stdin 0, stdout 1, stderr 2
     if stream == 1:
         print(data, file=sys.stdout)
