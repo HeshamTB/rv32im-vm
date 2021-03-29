@@ -27,6 +27,10 @@ class CPU:
     """
         Fetch the next instruction from the memory.
     """
+    def fetch(self):
+        inst = self.ram.read(self.pc)
+        inst = int.from_bytes(inst, byteorder='little')
+        self.execution1(intbv(inst)[32:])
 
     # =========== Decoding Area =========== #
     """
@@ -309,13 +313,7 @@ class CPU:
 
     def execution1(self, memory_snippet):
         # ----------------------------- test -----------------------------#
-
-        # Here we have data an example of data fetched from memory
-        memory = []
-        memory.append(memory_snippet.to_bytes(4, byteorder='little'))
-
-        buffer_int = int.from_bytes(memory[0], 'little')
-        data_holder = intbv(buffer_int)[32:0]
+        data_holder = memory_snippet
         rd = 0b0
         rs1 = 0b0
         rs2 = 0b0
@@ -393,11 +391,10 @@ class CPU:
             if funct3 == 0x5 and funct7 == 0x20:
                 self.SHIFT(self.regs[rs1], self.regs[rs2], rd, 'r', True)
 
-            if funct3 == 0x2 and funct7 == 0x0:  # the execution method here is not yet added
-                print()
-
-            if funct3 == 0x3 and funct7 == 0x0:  # the execution method here is not yet added
-                print()
+            if funct3 == 0x2 and funct7 == 0x0:  # slt
+                self.COMPARE(rs1, rs2, rd, signed=True, cond='l')
+            if funct3 == 0x3 and funct7 == 0x0:  # sltu
+                self.COMPARE(rs1, rs2, rd, signed=False, cond='l')
 
             if funct3 == 0x0 and funct7 == 0x01:
                 self.MUL(self.regs[rs1], self.regs[rs2], rd)
@@ -440,9 +437,9 @@ class CPU:
             if funct3 == 0x5 and imm == 0x20:
                 self.SHIFT(self.regs[rs1], imm, rd)
             if funct3 == 0x2:
-                self.COMPARE(self.regs[rs1], imm, rd, 'le')
+                self.COMPARE(self.regs[rs1], imm, rd, 'le', signed= True)
             if funct3 == 0x3:
-                self.COMPARE(self.regs[rs1], imm, rd, 'le', False)
+                self.COMPARE(self.regs[rs1], imm, rd, 'le', signed=False)
 
         if type_t == 'I2':
             rd = data_holder[11:7]
