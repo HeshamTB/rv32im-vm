@@ -5,35 +5,46 @@ from mem import Memory
 from myhdl import intbv
 import sys
 
+_function = 17
+_address = 11
+_length = 12
+_code = 10
+
+_syscall_exit = 93
+_syscall_print = 64
+
+_stdout = 1
+_stderr = 2
+
 def handle(regs: list[intbv], mem: Memory):
     # Read reg values
     # a7 req/funct
     # a1, a2 from to if print
     # stdin, stdout
 
-    if regs[17].unsigned() == 64:
+    if regs[_function].unsigned() == _syscall_print:
         # Print to console
-        data = getTextFromMem(mem,regs[11].unsigned(), regs[12].unsigned())
-        stream = regs[10].unsigned()
+        data = _getTextFromMem(mem, regs[_address].unsigned(), regs[_length].unsigned())
+        stream = regs[_code].unsigned()
         _sys_print(stream, data)
-    elif regs[17] == 0:
-        exit_val = regs[10] # Exit code in a0, x10. could be signed
-        _sys_exit(exit_val)
+    elif regs[_function] == _syscall_exit:
+        exit_val = regs[_code] # Exit code in a0, x10. could be signed
+        _sys_exit(int(exit_val))
     else:
         # Unimplemented req
         pass
 
 def _sys_print(data, stream: int = 0):
     # stdin 0, stdout 1, stderr 2
-    if stream == 1:
+    if stream == _stdout:
         print(data, file=sys.stdout)
-    elif stream == 2:
+    elif stream == _stderr:
         print(data, file=sys.stderr)
     else:
         pass # Exception?
 
 def _sys_exit(code: int):
-    pass
+    exit(code)
 
 def _getTextFromMem(mem: Memory, start_add, length):
     val = bytes()
@@ -42,5 +53,5 @@ def _getTextFromMem(mem: Memory, start_add, length):
         val += mem.read(address)
     if val.isascii():
         return val.decode('ascii')
-    elif val.isnumeric():
+    else:
         return int.from_bytes(val, 'little')
