@@ -440,48 +440,29 @@ class CPU:
             if funct3 == 0x5:
                 self.LOAD(rd,rs1,imm,2,False)
 
-# Testing area:
-x = CPU()
-
-reg = [intbv(0)[32:0] for i in range(32)]
-print("==================")
-print(reg[intbv(4)])
-#x.exc_arithmetic(0,0)
-y = 5
-ar = bytearray(5)
-ar[1] = 255
-print(ar[1])
-print(ar)
-print(x)# Notes:
-# We can use bytearray indices as numbers. for example if x is a bytearray, we can access like
-# x[3] -> will return the fourth byte in the array. Just like normal arrays. it will be returned as integer.
-# We can also manipulate it like integer or bits. It is acutally binary. we can do x[3] & 0b0001 or
-# x[3] = y + 4 or any other operation, and it will be stored back as a byte.
-        if type =='I3':
+        if type == 'I3':
             rd = data_holder[11:7]
             funct3 = data_holder[14:12]
             rs1 = data_holder[19:15]
             imm = data_holder[31:20]
-            self.JALR(rd,rs1,imm)
+            self.JALR(rd, rs1, imm)
 
-        if type =='I4':
+        if type == 'I4':
             rd = data_holder[11:7]
             funct3 = data_holder[14:12]
             rs1 = data_holder[19:15]
             imm = data_holder[31:20]
-            if imm==0x0:
+            if imm == 0x0:
                 self.ecall()
-            if imm==0x1:
+            if imm == 0x1:
                 self.ebreak()
-        # ------------ I type execution section ------------#
+            # ------------ I type execution section ------------#
 
-
-
-        # ------------ S type execution section ------------#
+            # ------------ S type execution section ------------#
         if type == 'S':
-            rs1=data_holder[19:15]
-            rs2=data_holder[24:20]
-            buffer=[]
+            rs1 = data_holder[19:15]
+            rs2 = data_holder[24:20]
+            buffer = []
             buffer.append(data_holder[7])
             buffer.append(data_holder[8])
             buffer.append(data_holder[9])
@@ -498,23 +479,23 @@ print(x)# Notes:
             imm = intbv(buffer)[32:0]
             # change the imm to intbv
             if funct3 == 0x0:
-                self.STORE(rs1,rs2,imm)
+                self.STORE(rs1, rs2, imm)
             if funct3 == 0x1:
-                self.STORE(rs1,rs2,imm,2)
+                self.STORE(rs1, rs2, imm, 2)
             if funct3 == 0x2:
-                self.STORE(rs1,rs2,imm,4)
+                self.STORE(rs1, rs2, imm, 4)
 
-        # ------------ S type execution section ------------#
+            # ------------ S type execution section ------------#
 
-        # ------------ B type execution section ------------#
-        if type=='B':
-            buffer=[]
+            # ------------ B type execution section ------------#
+        if type == 'B':
+            buffer = []
 
             buffer.append(0b0)
             buffer.append(data_holder[9])
             buffer.append(data_holder[10])
             buffer.append(data_holder[11])
-            buffer.append(data_holder[25]) # 10:5
+            buffer.append(data_holder[25])  # 10:5
             buffer.append(data_holder[26])
             buffer.append(data_holder[27])
             buffer.append(data_holder[28])
@@ -522,7 +503,7 @@ print(x)# Notes:
             buffer.append(data_holder[30])
             buffer.append(data_holder[7])
             buffer.append(data_holder[31])
-            #must make the intbv arg as an int
+            # must make the intbv arg as an int
 
             imm = intbv(buffer)[32:0]
             funct3 = data_holder[14:12]
@@ -530,20 +511,20 @@ print(x)# Notes:
             rs2 = data_holder[24:20]
 
             if funct3 == 0x0:
-                self.BRANCH(rs1,rs2,imm,'e')
+                self.BRANCH(rs1, rs2, imm, 'e')
             if funct3 == 0x1:
-                self.BRANCH(rs1,rs2,imm,'ne')
+                self.BRANCH(rs1, rs2, imm, 'ne')
             if funct3 == 0x4:
-                self.BRANCH(rs1,rs2,imm,'lt')
+                self.BRANCH(rs1, rs2, imm, 'lt')
             if funct3 == 0x5:
-                self.BRANCH(rs1,rs2,imm,'ge')
+                self.BRANCH(rs1, rs2, imm, 'ge')
             if funct3 == 0x6:
-                self.BRANCH(rs1,rs2,imm,'lt',False)
+                self.BRANCH(rs1, rs2, imm, 'lt', False)
             if funct3 == 0x7:
-                self.BRANCH(rs1,rs2,imm,'ge',False)
-        # ------------ B type execution section ------------#
+                self.BRANCH(rs1, rs2, imm, 'ge', False)
+            # ------------ B type execution section ------------#
 
-        # ------------ U type execution section ------------#
+            # ------------ U type execution section ------------#
         if type == 'U1':
             rd = data_holder[11:7]
             imm = data_holder[31:12]
@@ -551,12 +532,12 @@ print(x)# Notes:
         if type == 'U2':
             rd = data_holder[11:7]
             imm = data_holder[31:12]
-            self.AUIPC(rd,imm)
-        # ------------ U type execution section ------------#
+            self.AUIPC(rd, imm)
+            # ------------ U type execution section ------------#
 
         if type == 'J':
-            rd=data_holder[11:7]
-            buffer=[]
+            rd = data_holder[11:7]
+            buffer = []
             buffer.append(0b0)
             buffer.append(data_holder[22])
             buffer.append(data_holder[23])
@@ -577,31 +558,48 @@ print(x)# Notes:
             buffer.append(data_holder[18])
             buffer.append(data_holder[19])
             buffer.append(data_holder[31])
-            imm=intbv(buffer)
-            self.JAL(rd,imm)
+            imm = intbv(buffer)
+            self.JAL(rd, imm)
+
+
+if __name__ == '__main__':
+
+    # Testing area:
+    x = CPU()
+
+    reg = [intbv(0)[32:0] for i in range(32)]
+    print("==================")
+    print(reg[intbv(4)])
+    #x.exc_arithmetic(0,0)
+    y = 5
+    ar = bytearray(5)
+    ar[1] = 255
+    print(ar[1])
+    print(ar)
+    print(x)# Notes:
+    # We can use bytearray indices as numbers. for example if x is a bytearray, we can access like
+    # x[3] -> will return the fourth byte in the array. Just like normal arrays. it will be returned as integer.
+    # We can also manipulate it like integer or bits. It is acutally binary. we can do x[3] & 0b0001 or
+    # x[3] = y + 4 or any other operation, and it will be stored back as a byte.
+    # ----- intbv notes ----- #
+    # if you want to store 0b1100 as signed number (should be -4 not 12) then you must do the following:
+    # 1-    x = intbv(0b1100, min=0, max=16) -> note that we defined min and max. this is a must. alternativly,
+    #       ... we can also define number of bits instead of min and max. this will also work
+    # 2-    y = x.signed() -> returns -4
+    # If we didn't define min and max in x, then y will return 12.
+            # ----------------------------- test -----------------------------#
 
 
 
 
 
+    x = list()
+    x.append(0b00001111110000010000010100010111.to_bytes(4,byteorder='little'))  # store instruction as little endian
+    print(x[0])  # x[0] contains a 4 bytes stored as (byte) data type.
+    xint = int.from_bytes(x[0], 'little')  # convert x[0] from type byte into integer type.
+    ibv1 = intbv(xint)[32:0]  # convert xint into intbv
+    print(ibv1[5:])  # we can slice it like this
 
-
-
-
-
-        # ----------------------------- test -----------------------------#
-
-
-
-
-
-x = list()
-x.append(0b00001111110000010000010100010111.to_bytes(4,byteorder='little'))  # store instruction as little endian
-print(x[0])  # x[0] contains a 4 bytes stored as (byte) data type.
-xint = int.from_bytes(x[0], 'little')  # convert x[0] from type byte into integer type.
-ibv1 = intbv(xint)[32:0]  # convert xint into intbv
-print(ibv1[5:])  # we can slice it like this
-
-print("========================")
-ibv = intbv('111111000001000001010001')[24:0]
-print(ibv.signed()+1)
+    print("========================")
+    ibv = intbv('111111000001000001010001')[24:0]
+    print(ibv.signed()+1)
