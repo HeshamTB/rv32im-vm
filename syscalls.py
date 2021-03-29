@@ -15,15 +15,15 @@ def handle(regs: list[intbv], mem: Memory):
         # Print to console
         data = getTextFromMem(mem,regs[11].unsigned(), regs[12].unsigned())
         stream = regs[10].unsigned()
-        sys_print(stream, data)
+        _sys_print(stream, data)
     elif regs[17] == 0:
         exit_val = regs[10] # Exit code in a0, x10. could be signed
-        sys_exit(exit_val)
+        _sys_exit(exit_val)
     else:
         # Unimplemented req
         pass
 
-def sys_print(data, stream: int = 0):
+def _sys_print(data, stream: int = 0):
     # stdin 0, stdout 1, stderr 2
     if stream == 1:
         print(data, file=sys.stdout)
@@ -32,10 +32,10 @@ def sys_print(data, stream: int = 0):
     else:
         pass # Exception?
 
-def sys_exit(code: int):
+def _sys_exit(code: int):
     pass
 
-def getTextFromMem(mem: Memory, start_add, length):
+def _getTextFromMem(mem: Memory, start_add, length):
     val = bytes()
     for i in range(length):
         address = start_add + i  # Start add + inc. byte by byte

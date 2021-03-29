@@ -1,6 +1,6 @@
 from myhdl import intbv, bin
 from mem import Memory
-
+import syscalls
 
 class CPU:
     """
@@ -314,6 +314,7 @@ class CPU:
     # -------------------------- System calls -------------------------- #
     # TODO: Implement system calls.
     def ecall(self):
+        #syscalls.handle(self.regs, mem)
         pass
 
     def ebreak(self):
