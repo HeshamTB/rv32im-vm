@@ -10,54 +10,6 @@ class CPU:
             3- Decode instructions
             4- Execute instructions
     """
-
-    # ALU Inner class
-    # TODO: Consider removing this sub-class since it serves no purpose anymore
-    class ALU:
-        """
-            A sub class that has a function for each major arithmetic and logic operation (e.g. ADD, SUB, SHIFT, etc).
-            These major functions should be called from within the cpu, by the executioner function.
-        """
-
-        # TODO: Think about the two functions commented below. If they serve no purpose anymore, delete them.
-        # def exc_arithmetic(self, arg1, arg2, fn3, fn7=None, s=False, b=False):
-        #     if fn3 == 0x0:  # ADD, SUB, MUL
-        #         if fn7 == 0x01:
-        #             return arg1*arg2
-        #         elif fn7 == 0x00 or fn7 is None:
-        #             return arg1+arg2
-        #         elif fn7 == 0x20:
-        #             return arg1-arg2
-        #
-        #     elif fn3 == 0x1:
-        #         if fn7 == 0x01:  # MUL HIGH
-        #             return arg1 * arg2  # Needs attention
-        #
-        #     elif fn3 == 0x2:
-        #         if fn7 == 0x01:  # MUL HIGH (S)(U)
-        #             return arg1 * arg2  # Needs attention
-        #
-        #     elif fn3 == 0x3:
-        #         if fn7 == 0x01:  # MUL HIGH (U)
-        #             return arg1 * arg2  # Needs attention
-        #
-        #     elif fn3 == 0x4:
-        #         if fn7 == 0x01:
-        #             return arg1/arg2
-        #
-        #     elif fn3 == 0x5:
-        #         if fn7 == 0x01:  # DIV (U)
-        #             return arg1 / arg2  # Needs Attention
-        #
-        #     elif fn3 == 0x6:
-        #         if fn7 == 0x01:  # REMAINDER
-        #             return arg1 % arg2
-        #
-        #     elif fn3 == 0x7:
-        #         if fn7 == 0x01:  # REMAINDER (U)
-        #             return arg1 % arg2  # Needs attention
-    # End of ALU inner class
-
     # Constructor of CPU
     def __init__(self):
         """
@@ -66,7 +18,6 @@ class CPU:
             Input: NONE
         """
         self.regs = [intbv(0)[32:0] for i in range(32)]  # The Registers. Just a typical list
-        self.alu_unit = self.ALU()  # Consider removing it later
         self.pc = 0
         self.test_mem = Memory(100)  # just for testing.
 
@@ -94,22 +45,26 @@ class CPU:
     # TODO: 3-Currently we use ADD, SUB, SHIFT etc in other places. Think if eliminating this is useful or the opposite
     # ------------------------------------------- Basic instructions ------------------------------------------- #
     # ------ These return, but don't update registers. updating regs is caller responsibility in this case ------ #
-    def ADD(self, arg1: intbv, arg2: intbv) -> int:
+    def ADD(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
+        self.regs[rd] = arg1+arg2
         return arg1 + arg2
 
-    def SUB(self, arg1: intbv, arg2: intbv) -> int:
-        return self.ADD(arg1, -arg2)
+    def SUB(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
+        return self.ADD(arg1, -arg2, rd)
 
-    def OR(self, arg1, arg2):
+    def OR(self, arg1, arg2, rd):
+        self.regs[rd] = arg1 | arg2
         return arg1 | arg2
 
-    def XOR(self, arg1, arg2):
+    def XOR(self, arg1, arg2, rd):
+        self.regs[rd] = arg1 ^ arg2
         return arg1 ^ arg2
 
-    def AND(self, arg1, arg2):
+    def AND(self, arg1, arg2, rd):
+        self.regs[rd] = arg1 & arg2
         return arg1 & arg2
 
-    def SHIFT(self, arg1: intbv, arg2: intbv, dir='r', signed=False):  # needs testing
+    def SHIFT(self, arg1: intbv, arg2: intbv, rd, dir='r', signed=False):  # needs testing
         """
         Shifts arg1 by amount of arg2
         Args:
@@ -121,19 +76,22 @@ class CPU:
         """
         if dir == "r":
             if signed:
+                self.regs[rd] = arg1.signed() >> arg2.signed()
                 return arg1.signed() >> arg2.signed()
             else:
+                self.regs[rd] = arg1 >> arg2
                 return arg1 >> arg2  # arg1 is not signed number
         elif dir == "l":
+            self.regs[rd] = arg1 << arg2
             return arg1 << arg2
 
-    def COMPARE(self, arg1: intbv, arg2: intbv, cond="e", signed=True):
+    def COMPARE(self, arg1: intbv, arg2: intbv, rd, cond="e", signed=True):
         """
         Comapre arg1 and arg2.
         Args:
             arg1: first argument
             arg2: second argument
-            cond: comparison condition. e for equal, l for less, and g for greater.
+            cond: comparison condition. e for equal, l for less, and g for greater, le for <=, ge for >=.
             signed: Boolean flag for sign. By default is True. Set to False in case inputs are unsigned
         Returns: Boolean. indicates whether comparison result is true or false
         """
@@ -142,31 +100,46 @@ class CPU:
             arg2 = arg2.signed()
         # Check the conditions
         if cond == "e":
+            self.regs[rd] = int(arg1 == arg2)
             return arg1 == arg2
         elif cond == "l":
+            self.regs[rd] = int(arg1 < arg2)
             return arg1 < arg2
         elif cond == "g":
+            self.regs[rd] = int(arg1 > arg2)
             return arg1 > arg2
+        elif cond == "le":
+            self.regs[rd] = int(arg1 <= arg2)
+        elif cond == "ge":
+            self.regs[rd] = int(arg1 >= arg2)
 
-    def MUL(self, arg1: intbv, arg2: intbv, sign='S'):
+
+    def MUL(self, arg1: intbv, arg2: intbv, rd, sign='S'):
         # I considered the notation (s)(u) to mean arg1 is signed, arg2 not signed
         if sign.capitalize() == 'SU':
+            self.regs[rd] = arg1.signed() * arg2.unsigned()
             return arg1.signed() * arg2.unsigned()
         elif sign.capitalize() == 'U':
+            self.regs[rd] = arg1 * arg2
             return arg1 * arg2
         elif sign.capitalize() == 'S':
+            self.regs[rd] = arg1.signed() * arg2.signed()
             return arg1.signed() * arg2.signed()
         else:
             print("Error: condition " + sign + " is not defined for MUL function")
 
-    def DIV(self, arg1: intbv, arg2: intbv, signed=True):
+    def DIV(self, arg1: intbv, arg2: intbv, rd, signed=True):
         if signed:
+            self.regs[rd] = arg1.signed() // arg2.signed()
             return arg1.signed() // arg2.signed()
+        self.regs[rd] = arg1 // arg2
         return arg1 // arg2
 
-    def REM(self, arg1: intbv, arg2: intbv, signed=True):
+    def REM(self, arg1: intbv, arg2: intbv, rd, signed=True):
         if signed:
-            arg1.signed() % arg2.signed()
+            self.regs[rd] = arg1.signed() % arg2.signed()
+            return arg1.signed() % arg2.signed()
+        self.regs[rd] = arg1 % arg2
         return arg1 % arg2
 
     # -------------------------- instructions of load -------------------------- #
@@ -186,7 +159,7 @@ class CPU:
         if signed:
             imm = imm.signed()
         src = intbv(self.regs[rs1])[32:0]
-        target_address = self.ADD(imm, src)
+        target_address = src + imm
         loaded_bytes = None
         if width == 1:
             loaded_bytes = self.test_mem.read(target_address)
@@ -217,7 +190,7 @@ class CPU:
 
         src1 = intbv(self.regs[rs1])[32:0]
         src2 = self.regs[rs2].to_bytes(width, 'little')
-        target_address = self.ADD(imm, src1)
+        target_address = imm + src1
         # Loop, each time store one byte from src2 in the memory.
         for i in range(width):
             store_byte = src2[i].to_bytes(1, 'little')
@@ -242,13 +215,13 @@ class CPU:
             val1 = val1.signed()
             val2 = val2.signed()
         if cond == 'e':
-            res = self.COMPARE(val1, val2, cond='e', signed=signed)
+            res = val1 == val2
         elif cond == 'ne':
-            res = not self.COMPARE(val1, val2, cond='e', signed=signed)
+            res = not (val1 == val2)
         elif cond == 'lt':
-            res = self.COMPARE(val1, val2, cond='l', signed=signed)
+            res = val1 < val2
         elif cond == 'ge':
-            res = self.COMPARE(val1, val2, cond='g', signed=signed) or self.COMPARE(val1, val2, cond='e', signed=signed)
+            res = val1 >= val2
         else:
             print("Error: Please enter valid comparison condition")
 
@@ -323,27 +296,7 @@ class CPU:
     # TODO: Following function was to be replaced by many functions, for each format (for example exc_R) ...
     #  ... but I decided to change that structure a bit and made functions for each major operation.
     #  this function now serves no purpose but its content can be used somewhere else. Consider deleting it later.
-    def execution(self, opcode, rd, func3, rs1, rs2, func7, imm):
-        """
-            Requirements:
-                1- opcode (Used to know the format type)
-                2- func3-func7-rd-rs1-rs2
 
-            Bit slicing: (below are inclusive start- inclusive end)
-            opcode: 0-6
-            rd: 7-11
-            func3: 12-14
-            rs1: 15-19
-            rs2: 20-24
-            func7: 25-31
-
-            Execution
-                1- All instructions dictionary
-                2- Loop over opcode
-                3- If found, call the corresponding function
-                4- Each instruction has a function to execute it
-                5- Write back
-        """
 
         #  Below lines for testing
         tst_regs = [0 for i in range(32)]
@@ -355,75 +308,21 @@ class CPU:
         rs2 = int.to_bytes(0b00101, 1, 'little')
         #  End of testing area
 
-        # TODO: Think if the following if statements have any use. Otherwise, delete them.
-        if opcode == 0b0110011:  # R
-            self.alu_unit.exc_arithmetic()
-            self.alu_unit.exc_logic()
-            pass
-        elif opcode == 0b0010011:  # I
-            self.alu_unit.exc_arithmetic()
-            self.alu_unit.exc_logic()
-            pass
-        elif opcode == 0b0000011:  # L
-            pass
-        elif opcode == 0b0100011:  # S
-            pass
-        elif opcode == 0b1100011:  # B
-            pass
-        elif opcode == 0b1101111:  # J
-            pass
-        elif opcode == 0b1100111:  # jalr
-            pass
-        elif opcode == 0b0110111:  # lui
-            pass
-        elif opcode == 0b0010111:  # auipc
-            pass
-        elif opcode == 0b1110011:  # syscalls
-            pass
 
-        # Following dictionaries were for testing.
-        # instructions_dictionary = {0b0110011:
-        #                                [{'inst': 'add', 'func3': '000', 'func7': '0000000'},
-        #                                 {'inst': 'sub', 'func3': '000', 'func7': '0100000'},
-        #                                 {'inst': 'xor', 'func3': '100', 'func7': '0000000'},
-        #                                 {'inst': 'or', 'func3': '110', 'func7': '0000000'},
-        #                                 {'inst': 'and', 'func3': '111', 'func7': '0000000'},
-        #                                 {'inst': 'sll', 'func3': '001', 'func7': '0000000'},
-        #                                 {'inst': 'srl', 'func3': '101', 'func7': '0000000'},
-        #                                 {'inst': 'sra', 'func3': '101', 'func7': '0100000'},
-        #                                 {'inst': 'slt', 'func3': '010', 'func7': '0000000'},
-        #                                 {'inst': 'sltu', 'func3': '011', 'func7': '0000000'}],
-        #                            0b0010011: "I",
-        #                            0b0000011: "L",
-        #                            0b0100011: "S",
-        #                            0b1100011: "B",
-        #                            0b1101111: "J",
-        #                            0b1100111: "Jalr",
-        #                            0b0110111: "lui",
-        #                            0b0010111: "auipc",
-        #                            0b1110011: "syscalls"}
-        # print()
-        # instructions_dictionary = {0b0110011: {'func3': 0b000, 'func7': 0b0000000},
-        #                            0b0010011: "I",
-        #                            0b0000011: "L",
-        #                            0b0100011: "S",
-        #                            0b1100011: "B",
-        #                            0b1101111: "J",
-        #                            0b1100111: "Jalr",
-        #                            0b0110111: "lui",
-        #                            0b0010111: "auipc",
-        #                            0b1110011: "syscalls"}
 
 # Testing area:
-x = CPU.ALU()
+x = CPU()
+
+reg = [intbv(0)[32:0] for i in range(32)]
+print("==================")
+print(reg[intbv(4)])
 #x.exc_arithmetic(0,0)
 y = 5
 ar = bytearray(5)
 ar[1] = 255
 print(ar[1])
 print(ar)
-print(x)
-# Notes:
+print(x)# Notes:
 # We can use bytearray indices as numbers. for example if x is a bytearray, we can access like
 # x[3] -> will return the fourth byte in the array. Just like normal arrays. it will be returned as integer.
 # We can also manipulate it like integer or bits. It is acutally binary. we can do x[3] & 0b0001 or
@@ -438,3 +337,14 @@ print(x)
 # 2-    y = x.signed() -> returns -4
 # If we didn't define min and max in x, then y will return 12.
 
+
+x = list()
+x.append(0b00001111110000010000010100010111.to_bytes(4,byteorder='little'))  # store instruction as little endian
+print(x[0])  # x[0] contains a 4 bytes stored as (byte) data type.
+xint = int.from_bytes(x[0], 'little')  # convert x[0] from type byte into integer type.
+ibv1 = intbv(xint)[32:0]  # convert xint into intbv
+print(ibv1[5:])  # we can slice it like this
+
+print("========================")
+ibv = intbv('111111000001000001010001')[24:0]
+print(ibv.signed()+1)
