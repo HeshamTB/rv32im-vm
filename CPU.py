@@ -22,15 +22,17 @@ class CPU:
         self.regs = [intbv(0)[32:0] for i in range(32)]  # The Registers. Just a typical list
         self.pc = 0
         self.ram = ram  # just for testing.
+        self.jump_flag = False
 
     # =========== Fetching Area =========== #
     """
         Fetch the next instruction from the memory.
     """
     def fetch(self):
-        inst = self.ram.read(self.pc)
+        inst = self.ram.readWord(self.pc)
         inst = int.from_bytes(inst, byteorder='little')
         self.execution1(intbv(inst)[32:])
+        self.jump_flag = False
 
     # =========== Decoding Area =========== #
     """
@@ -366,11 +368,11 @@ class CPU:
 
         # ------------ R type execution section ------------#
         if type_t == 'R':
-            rd = data_holder[11:7]
-            rs1 = data_holder[19:15]
+            rd = data_holder[12:7]
+            rs1 = data_holder[20:15]
             rs2 = data_holder[24:20]
-            funct3 = data_holder[14:12]
-            funct7 = data_holder[31:25]
+            funct3 = data_holder[15:12]
+            funct7 = data_holder[32:25]
             # look for the correct instruction via func3 and func7
             if funct3 == 0b000:
                 if funct7 == 0x0:
@@ -417,10 +419,10 @@ class CPU:
         # ------------ I type execution section ------------#
 
         if type_t == 'I1':
-            rd = data_holder[11:7]
-            funct3 = data_holder[14:12]
-            rs1 = data_holder[19:15]
-            imm = data_holder[31:20]
+            rd = data_holder[12:7]
+            funct3 = data_holder[15:12]
+            rs1 = data_holder[20:15]
+            imm = data_holder[32:20]
 
             if funct3 == 0x0:
                 self.ADD(rs1, imm, rd)
@@ -442,10 +444,10 @@ class CPU:
                 self.COMPARE(self.regs[rs1], imm, rd, 'le', signed=False)
 
         if type_t == 'I2':
-            rd = data_holder[11:7]
-            funct3 = data_holder[14:12]
-            rs1 = data_holder[19:15]
-            imm = data_holder[31:20]
+            rd = data_holder[12:7]
+            funct3 = data_holder[15:12]
+            rs1 = data_holder[20:15]
+            imm = data_holder[32:20]
             if funct3 == 0x0:
                 self.LOAD(rd, rs1, imm)
             if funct3 == 0x1:
@@ -458,17 +460,17 @@ class CPU:
                 self.LOAD(rd, rs1, imm, 2, False)
 
         if type_t == 'I3':
-            rd = data_holder[11:7]
-            funct3 = data_holder[14:12]
-            rs1 = data_holder[19:15]
-            imm = data_holder[31:20]
+            rd = data_holder[12:7]
+            funct3 = data_holder[15:12]
+            rs1 = data_holder[20:15]
+            imm = data_holder[32:20]
             self.JALR(rd, rs1, imm)
 
         if type_t == 'I4':
-            rd = data_holder[11:7]
-            funct3 = data_holder[14:12]
-            rs1 = data_holder[19:15]
-            imm = data_holder[31:20]
+            rd = data_holder[12:7]
+            funct3 = data_holder[15:12]
+            rs1 = data_holder[20:15]
+            imm = data_holder[32:20]
             if imm == 0x0:
                 self.ecall()
             if imm == 0x1:
@@ -477,8 +479,8 @@ class CPU:
 
             # ------------ S type execution section ------------#
         if type_t == 'S':
-            rs1 = data_holder[19:15]
-            rs2 = data_holder[24:20]
+            rs1 = data_holder[20:15]
+            rs2 = data_holder[25:20]
             buffer = []
             buffer.append(data_holder[7])
             buffer.append(data_holder[8])
@@ -493,7 +495,13 @@ class CPU:
             buffer.append(data_holder[30])
             buffer.append(data_holder[31])
 
-            imm = intbv(buffer)[32:0]
+            imm = intbv(0)[12:]
+            bits_order = [7, 8, 9, 10, 11, 25, 26, 27, 28, 29, 30, 31]
+            counter = 0
+            for i in range(12):
+                imm += intbv(data_holder[bits_order[i]] << i)
+                counter += 1
+
             # change the imm to intbv
             if funct3 == 0x0:
                 self.STORE(rs1, rs2, imm)
@@ -508,24 +516,17 @@ class CPU:
         if type_t == 'B':
             buffer = []
 
-            buffer.append(0b0)
-            buffer.append(data_holder[9])
-            buffer.append(data_holder[10])
-            buffer.append(data_holder[11])
-            buffer.append(data_holder[25])  # 10:5
-            buffer.append(data_holder[26])
-            buffer.append(data_holder[27])
-            buffer.append(data_holder[28])
-            buffer.append(data_holder[29])
-            buffer.append(data_holder[30])
-            buffer.append(data_holder[7])
-            buffer.append(data_holder[31])
+            imm = intbv(0)[13:]
+            bits_order = [8, 9, 10, 11, 25, 26, 27, 28, 29, 30, 7, 31]
+            counter = 0
+            for i in range(12):
+                imm += intbv(data_holder[bits_order[i]] << i)
+                counter += 1
+            imm = intbv(imm<<1)[13:]
             # must make the intbv arg as an int
-
-            imm = intbv(buffer)[32:0]
-            funct3 = data_holder[14:12]
-            rs1 = data_holder[19:15]
-            rs2 = data_holder[24:20]
+            funct3 = data_holder[15:12]
+            rs1 = data_holder[20:15]
+            rs2 = data_holder[25:20]
 
             if funct3 == 0x0:
                 self.BRANCH(rs1, rs2, imm, 'e')
@@ -543,75 +544,84 @@ class CPU:
 
             # ------------ U type execution section ------------#
         if type_t == 'U1':
-            rd = data_holder[11:7]
-            imm = data_holder[31:12]
+            rd = data_holder[12:7]
+            imm = data_holder[32:12]
             self.LUI(rd, imm)
         if type_t == 'U2':
-            rd = data_holder[11:7]
-            imm = data_holder[31:12]
+            rd = data_holder[12:7]
+            imm = data_holder[32:12]
             self.AUIPC(rd, imm)
             # ------------ U type execution section ------------#
 
         if type_t == 'J':
-            rd = data_holder[11:7]
-            buffer = []
-            buffer.append(0b0)
-            buffer.append(data_holder[22])
-            buffer.append(data_holder[23])
-            buffer.append(data_holder[24])
-            buffer.append(data_holder[25])
-            buffer.append(data_holder[26])
-            buffer.append(data_holder[27])
-            buffer.append(data_holder[28])
-            buffer.append(data_holder[29])
-            buffer.append(data_holder[30])
-            buffer.append(data_holder[20])
-            buffer.append(data_holder[12])
-            buffer.append(data_holder[13])
-            buffer.append(data_holder[14])
-            buffer.append(data_holder[15])
-            buffer.append(data_holder[16])
-            buffer.append(data_holder[17])
-            buffer.append(data_holder[18])
-            buffer.append(data_holder[19])
-            buffer.append(data_holder[31])
-            imm = intbv(buffer)
+            rd = data_holder[21:]
+            # buffer = []
+            # buffer.append(0b0)
+            # buffer.append(data_holder[21])
+            # buffer.append(data_holder[22])
+            # buffer.append(data_holder[23])
+            # buffer.append(data_holder[24])
+            # buffer.append(data_holder[25])
+            # buffer.append(data_holder[26])
+            # buffer.append(data_holder[27])
+            # buffer.append(data_holder[28])
+            # buffer.append(data_holder[29])
+            # buffer.append(data_holder[30])
+            # buffer.append(data_holder[20])
+            # buffer.append(data_holder[12])
+            # buffer.append(data_holder[13])
+            # buffer.append(data_holder[14])
+            # buffer.append(data_holder[15])
+            # buffer.append(data_holder[16])
+            # buffer.append(data_holder[17])
+            # buffer.append(data_holder[18])
+            # buffer.append(data_holder[19])
+            # buffer.append(data_holder[31])
+
+            imm = intbv(0)[21:]
+            bits_order = [21,22,23,24,25,26,27,28,29,30,20,12,13,14,15,16,17,18,19,31]
+            counter = 0
+            for i in range(20):
+                imm += intbv(data_holder[bits_order[i]] << i)
+                counter += 1
+            imm = intbv(imm << 1)[21:]
+
             self.JAL(rd, imm)
 
 
-if __name__ == '__main__':
-    # Testing area:
-    x = CPU()
-
-    reg = [intbv(0)[32:0] for i in range(32)]
-    print("==================")
-    print(reg[intbv(4)])
-    # x.exc_arithmetic(0,0)
-    y = 5
-    ar = bytearray(5)
-    ar[1] = 255
-    print(ar[1])
-    print(ar)
-    print(x)  # Notes:
-    # We can use bytearray indices as numbers. for example if x is a bytearray, we can access like
-    # x[3] -> will return the fourth byte in the array. Just like normal arrays. it will be returned as integer.
-    # We can also manipulate it like integer or bits. It is acutally binary. we can do x[3] & 0b0001 or
-    # x[3] = y + 4 or any other operation, and it will be stored back as a byte.
-    # ----- intbv notes ----- #
-    # if you want to store 0b1100 as signed number (should be -4 not 12) then you must do the following:
-    # 1-    x = intbv(0b1100, min=0, max=16) -> note that we defined min and max. this is a must. alternativly,
-    #       ... we can also define number of bits instead of min and max. this will also work
-    # 2-    y = x.signed() -> returns -4
-    # If we didn't define min and max in x, then y will return 12.
-    # ----------------------------- test -----------------------------#
-
-    x = list()
-    x.append(0b00001111110000010000010100010111.to_bytes(4, byteorder='little'))  # store instruction as little endian
-    print(x[0])  # x[0] contains a 4 bytes stored as (byte) data type.
-    xint = int.from_bytes(x[0], 'little')  # convert x[0] from type byte into integer type.
-    ibv1 = intbv(xint)[32:0]  # convert xint into intbv
-    print(ibv1[5:])  # we can slice it like this
-
-    print("========================")
-    ibv = intbv('111111000001000001010001')[24:0]
-    print(ibv.signed() + 1)
+# if __name__ == '__main__':
+#     # Testing area:
+#     x = CPU()
+#
+#     reg = [intbv(0)[32:0] for i in range(32)]
+#     print("==================")
+#     print(reg[intbv(4)])
+#     # x.exc_arithmetic(0,0)
+#     y = 5
+#     ar = bytearray(5)
+#     ar[1] = 255
+#     print(ar[1])
+#     print(ar)
+#     print(x)  # Notes:
+#     # We can use bytearray indices as numbers. for example if x is a bytearray, we can access like
+#     # x[3] -> will return the fourth byte in the array. Just like normal arrays. it will be returned as integer.
+#     # We can also manipulate it like integer or bits. It is acutally binary. we can do x[3] & 0b0001 or
+#     # x[3] = y + 4 or any other operation, and it will be stored back as a byte.
+#     # ----- intbv notes ----- #
+#     # if you want to store 0b1100 as signed number (should be -4 not 12) then you must do the following:
+#     # 1-    x = intbv(0b1100, min=0, max=16) -> note that we defined min and max. this is a must. alternativly,
+#     #       ... we can also define number of bits instead of min and max. this will also work
+#     # 2-    y = x.signed() -> returns -4
+#     # If we didn't define min and max in x, then y will return 12.
+#     # ----------------------------- test -----------------------------#
+#
+#     x = list()
+#     x.append(0b00001111110000010000010100010111.to_bytes(4, byteorder='little'))  # store instruction as little endian
+#     print(x[0])  # x[0] contains a 4 bytes stored as (byte) data type.
+#     xint = int.from_bytes(x[0], 'little')  # convert x[0] from type byte into integer type.
+#     ibv1 = intbv(xint)[32:0]  # convert xint into intbv
+#     print(ibv1[5:])  # we can slice it like this
+#
+#     print("========================")
+#     ibv = intbv('111111000001000001010001')[24:0]
+#     print(ibv.signed() + 1)
