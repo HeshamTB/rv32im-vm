@@ -29,10 +29,10 @@ class CPU:
         Fetch the next instruction from the memory.
     """
     def fetch(self):
+        self.jump_flag = False
         inst = self.ram.readWord(self.pc)
         inst = int.from_bytes(inst, byteorder='little')
         self.execution1(intbv(inst)[32:])
-        self.jump_flag = False
 
     # =========== Decoding Area =========== #
     """
@@ -339,7 +339,7 @@ class CPU:
         type_t = ''
 
         for i in range(len(key_opcodes)):
-            if data_holder[6:0] == key_opcodes[i]:
+            if data_holder[7:0] == key_opcodes[i]:
                 #print('match found')
 
                 if i == 0:
