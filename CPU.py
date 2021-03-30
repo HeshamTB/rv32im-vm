@@ -30,6 +30,7 @@ class CPU:
     """
     def fetch(self):
         self.jump_flag = False
+        self.regs[0] = intbv(0)
         inst = self.ram.readWord(self.pc)
         inst = int.from_bytes(inst, byteorder='little')
         self.execution1(intbv(inst)[32:])
@@ -54,7 +55,7 @@ class CPU:
     # ------------------------------------------- Basic instructions ------------------------------------------- #
     # ------ These return, but don't update registers. updating regs is caller responsibility in this case ------ #
     def ADD(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
-        self.regs[rd] = intbv(arg1 + arg2)[32:]
+        self.regs[rd] = intbv(arg1.signed() + arg2.signed())[32:]
         return arg1 + arg2
 
     def SUB(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:

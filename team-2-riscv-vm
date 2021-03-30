@@ -45,6 +45,8 @@ def main():
         cpu.fetch()
         if not cpu.jump_flag:
             cpu.pc += 4
+            if cpu.pc > _add_text_limit:
+                print('Program is done (reached max address')
 
 def parseArgs() -> dict:
     # TODO: Add mem allocation option
