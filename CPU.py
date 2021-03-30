@@ -434,13 +434,13 @@ class CPU:
             print(
                 "Type I1: imm: " + str(imm) + "\t func3: " + str(funct3) + "\t rs1: " + str(rs1) + "\t rd: " + str(rd))
             if funct3 == 0x0:
-                self.ADD(rs1, imm, rd)
+                self.ADD(self.regs[rs1], imm, rd)
             if funct3 == 0x4:
-                self.XOR(rs1, imm, rd)
+                self.XOR(self.regs[rs1], imm, rd)
             if funct3 == 0x6:
-                self.OR(rs1, imm, rd)
+                self.OR(self.regs[rs1], imm, rd)
             if funct3 == 0x7:
-                self.AND(rs1, imm, rd)
+                self.AND(self.regs[rs1], imm, rd)
             if funct3 == 0x1 and imm == 0x0:
                 self.SHIFT(self.regs[rs1], imm, rd)
             if funct3 == 0x5 and imm == 0x0:
