@@ -21,7 +21,7 @@ class CPU:
         """
         self.regs = [intbv(0)[32:0] for i in range(32)]  # The Registers. Just a typical list
         self.pc = 0
-        self.ram = ram  # just for testing.
+        self.ram = ram
         self.jump_flag = False
 
     # =========== Fetching Area =========== #
@@ -251,7 +251,7 @@ class CPU:
         """
         # First, shift the immediate to left once to multiply by 2
         imm = intbv(imm).signed()[21:0]  # TODO: check sign extension
-        self.regs[rd] = self.pc + 4  # Save return address in rd
+        self.regs[rd] = intbv(self.pc + 4)[32:0]  # Save return address in rd
         self.jump_flag = True
         self.pc += imm  # jump
 
@@ -281,7 +281,7 @@ class CPU:
             print('Error: Immediate passed to LUI is not 20 bits intbv')
             exit(0)
         imm = imm << 12
-        self.regs[rd] = imm
+        self.regs[rd] = intbv(imm)[32:0]
 
     def AUIPC(self, rd, imm: intbv):
         """
@@ -295,7 +295,7 @@ class CPU:
             print('Error: Immediate passed to LUI is not 20 bits intbv')
             exit(0)
         imm = imm << 12
-        self.regs[rd] = self.pc + imm
+        self.regs[rd] = intbv(self.pc + imm)[32:0]
 
     # -------------------------- System calls -------------------------- #
     # TODO: Implement system calls.
@@ -339,7 +339,7 @@ class CPU:
 
         for i in range(len(key_opcodes)):
             if data_holder[6:0] == key_opcodes[i]:
-                print('match found')
+                #print('match found')
 
                 if i == 0:
                     print('Type is: ', 'R')
