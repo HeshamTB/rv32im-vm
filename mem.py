@@ -51,6 +51,13 @@ class Memory:
         #    dum = dum + hex(i) +' '+ val + os.linesep
         return values
 
+    # TODO: Edit this function to be more efficient
+    def dump_data(self) -> list:
+        values = list()
+        for i in range(0x2000, 0x2050):
+            values.append(self.mem[i])
+        return values
+
 if __name__ == '__main__':
     x = Memory(50)
     x.write(0x22, int(22).to_bytes(1,'little'))
