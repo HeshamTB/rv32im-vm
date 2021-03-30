@@ -40,12 +40,13 @@ def main():
     cpu.regs[_index_gp] = intbv(_add_global_ptr)[32:0]
     while 1:
         printRegs(cpu.regs)
-        print('pc = {}'.format(cpu.pc))
+        print('pc = {}'.format(hex(cpu.pc)))
         cpu.fetch()
         if not cpu.jump_flag:
             cpu.pc += 4
             if cpu.pc > _add_text_limit:
                 print('Program is done (reached max address')
+                exit(0)
 
 def parseArgs() -> dict:
     # TODO: Add mem allocation option

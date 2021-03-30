@@ -30,6 +30,10 @@ def handle(regs: list, mem: Memory):
         _sys_print(stream, data)
     elif regs[_function] == _syscall_exit:
         exit_val = regs[_code] # Exit code in a0, x10. could be signed
+        # dump the data section of memory before exiting
+        data = mem.dump_data()
+        for d in data:
+            print(hex(int.from_bytes(d, byteorder='little')), end="")
         _sys_exit(int(exit_val))
     elif regs[_function] == _syscall_halt:
         _sys_halt()

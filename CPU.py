@@ -33,7 +33,7 @@ class CPU:
         self.regs[0] = intbv(0)
         inst = self.ram.readWord(self.pc)
         inst = int.from_bytes(inst, byteorder='little')
-        self.execution1(intbv(inst)[32:])
+        self.decode(intbv(inst)[32:])
 
     # =========== Decoding Area =========== #
     """
@@ -54,24 +54,21 @@ class CPU:
     # TODO: 3-Currently we use ADD, SUB, SHIFT etc in other places. Think if eliminating this is useful or the opposite
     # ------------------------------------------- Basic instructions ------------------------------------------- #
     # ------ These return, but don't update registers. updating regs is caller responsibility in this case ------ #
-    def ADD(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
+    def ADD(self, arg1: intbv, arg2: intbv, rd: intbv):
         self.regs[rd] = intbv(arg1.signed() + arg2.signed())[32:]
         return arg1 + arg2
 
-    def SUB(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
-        return self.ADD(arg1, -arg2, rd)
+    def SUB(self, arg1: intbv, arg2: intbv, rd: intbv):
+        self.regs[rd] = intbv(arg1.signed() - arg2)[32:]
 
     def OR(self, arg1, arg2, rd):
         self.regs[rd] = intbv(arg1 | arg2)[32:]
-        return arg1 | arg2
 
     def XOR(self, arg1, arg2, rd):
         self.regs[rd] = intbv(arg1 ^ arg2)[32:]
-        return arg1 ^ arg2
 
     def AND(self, arg1, arg2, rd):
         self.regs[rd] = intbv(arg1 & arg2)[32:]
-        return arg1 & arg2
 
     def SHIFT(self, arg1: intbv, arg2: intbv, rd, dir='r', signed=False):  # needs testing
         """
@@ -85,11 +82,9 @@ class CPU:
         """
         if dir == "r":
             if signed:
-                self.regs[rd] = intbv(arg1.signed() >> arg2.signed())[32:]
-                return arg1.signed() >> arg2.signed()
+                self.regs[rd] = intbv(arg1.signed() >> arg2)[32:]  # TODO: check if arg2 need to be signed
             else:
                 self.regs[rd] = intbv(arg1 >> arg2)[32:]
-                return arg1 >> arg2  # arg1 is not signed number
         elif dir == "l":
             self.regs[rd] = intbv(arg1 << arg2)[32:]
             return arg1 << arg2
@@ -179,7 +174,7 @@ class CPU:
             print("Error: please enter valid load width")
             exit(0)
         # Store the loaded byte as an integer in the destination reg
-        self.regs[rd] = intbv(int.from_bytes(loaded_bytes, 'little')).signed()[32:]  # TODO: check sign extension
+        self.regs[rd] = intbv(int.from_bytes(loaded_bytes, 'little'))[32:]  # TODO: check sign extension
 
     # -------------------------- instructions of store -------------------------- #
     def STORE(self, rs1, rs2, imm: intbv, width=1):
@@ -198,13 +193,10 @@ class CPU:
 
         src1 = intbv(self.regs[rs1])[32:0]
         print(self.regs[rs2])
-        #print(width)
         src2 = int(intbv(self.regs[rs2])[8*width:0]).to_bytes(width, 'little')
         target_address = imm + src1
         print('src1 {} src2 {} target_add {}'.format(src1, src2, target_address))
-        #print(target_address)
         # Loop, each time store one byte from src2 in the memory.
-
         for i in range(width):
             store_byte = src2[i].to_bytes(1, 'little')
             self.ram.write(target_address + i, store_byte)
@@ -252,7 +244,8 @@ class CPU:
         Returns:
         """
         # First, shift the immediate to left once to multiply by 2
-        imm = intbv(imm).signed()[21:0]  # TODO: check sign extension
+        imm = imm.signed()  # TODO: check sign extension (changed)
+
         self.regs[rd] = intbv(self.pc + 4)[32:0]  # Save return address in rd
         self.jump_flag = True
         self.pc = self.pc + imm  # jump
@@ -268,7 +261,7 @@ class CPU:
         """
         self.regs[rd] = intbv(self.pc + 4)[32:0]
         self.jump_flag = True
-        self.pc = self.regs[rs1] + imm
+        self.pc = self.regs[rs1] + imm.signed()
 
     # -------------------------- Instructions with large immediate -------------------------- #
     def LUI(self, rd, imm: intbv):
@@ -307,35 +300,12 @@ class CPU:
     def ebreak(self):
         pass
 
-        # TODO: Following function was to be replaced by many functions, for each format (for example exc_R) ...
-        #  ... but I decided to change that structure a bit and made functions for each major operation.
-        #  this function now serves no purpose but its content can be used somewhere else. Consider deleting it later.
-
-        #  Below lines for testing
-        tst_regs = [0 for i in range(32)]
-        opcode = int.to_bytes(0b0110011, 1, 'little')
-        func3 = int.to_bytes(0b000, 1, 'little')
-        func7 = int.to_bytes(0b0000000, 1, 'little')
-        rd = int.to_bytes(0b00011, 1, 'little')
-        rs1 = int.to_bytes(0b00100, 1, 'little')
-        rs2 = int.to_bytes(0b00101, 1, 'little')
-        #  End of testing area
-
-    def execution1(self, memory_snippet):
+    def decode(self, memory_snippet):
         # ----------------------------- test -----------------------------#
         data_holder = memory_snippet
-        rd = 0b0
-        rs1 = 0b0
-        rs2 = 0b0
-        funct3 = 0b0
-        funct7 = 0b0
-        imm = 0b0
-        imm1 = 0b0
-        imm2 = 0b0
 
         key_opcodes = [0b0110011, 0b0010011, 0b0000011, 0b1100111, 0b1110011, 0b0100011, 0b1100011, 0b0110111,
-                       0b0010111,
-                       0b1101111]  # opcode for R I S B U J types.
+                       0b0010111, 0b1101111]  # opcode for R I S B U J types.
 
         type_t = ''
 
@@ -378,10 +348,14 @@ class CPU:
         if type_t == 'R':
             rd = data_holder[12:7]
             rs1 = data_holder[20:15]
-            rs2 = data_holder[24:20]
+            rs2 = data_holder[25:20]
             funct3 = data_holder[15:12]
             funct7 = data_holder[32:25]
+            """
+            Important note: the numbers printed below of rs1 rs2 and rd are hex. don't get confused.
+            """
             print("Type R: func7: " + str(funct7) + "\t func3: "+ str(funct3) + "\t rs1: " + str(rs1) + "\t rs2: " + str(rs2)  +"\t rd: "+ str(rd))
+            print("rs1 = {}, rs2 = {}, rd = {}".format(rs1,rs2,rd))
             # look for the correct instruction via func3 and func7
             if funct3 == 0b000:
                 if funct7 == 0x0:
@@ -473,12 +447,13 @@ class CPU:
                 self.LOAD(rd, rs1, imm, 2, False)
 
         if type_t == 'I3':
-            print(
-                "Type I3: imm: " + str(imm) + "\t func3: " + str(funct3) + "\t rs1: " + str(rs1) + "\t rd: " + str(rd))
             rd = data_holder[12:7]
             funct3 = data_holder[15:12]
             rs1 = data_holder[20:15]
             imm = data_holder[32:20]
+            imm = intbv(imm.signed())[32:0]  # Sign extend imm to 32 bits to prepare for addition with register rs1
+            print(
+                "Type I3: imm: " + str(imm) + "\t func3: " + str(funct3) + "\t rs1: " + str(rs1) + "\t rd: " + str(rd))
             self.JALR(rd, rs1, imm)
 
         if type_t == 'I4':
@@ -586,7 +561,6 @@ class CPU:
 
         if type_t == 'J':
             rd = data_holder[12:7]
-            # buffer = []
             # buffer.append(0b0)
             # buffer.append(data_holder[21])
             # buffer.append(data_holder[22])
@@ -616,6 +590,7 @@ class CPU:
                 imm += intbv(data_holder[bits_order[i]] << i)
                 counter += 1
             imm = intbv(imm << 1)[21:]
+            imm = intbv(imm.signed())[32:]  # Sign extend the immediate to 32 bits, since it will be added to pc(32 bits)
 
             print("Type JAL: imm: " + str(imm) + "\t rd: " + str(rd))
 
