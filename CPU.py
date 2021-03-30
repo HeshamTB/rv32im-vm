@@ -255,7 +255,7 @@ class CPU:
         imm = intbv(imm).signed()[21:0]  # TODO: check sign extension
         self.regs[rd] = intbv(self.pc + 4)[32:0]  # Save return address in rd
         self.jump_flag = True
-        self.pc += imm  # jump
+        self.pc = self.pc + imm  # jump
 
     def JALR(self, rd, rs1, imm: intbv):
         """
@@ -585,7 +585,7 @@ class CPU:
             # ------------ U type execution section ------------#
 
         if type_t == 'J':
-            rd = data_holder[21:]
+            rd = data_holder[12:7]
             # buffer = []
             # buffer.append(0b0)
             # buffer.append(data_holder[21])
