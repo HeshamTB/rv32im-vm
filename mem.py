@@ -51,7 +51,7 @@ class Memory:
         #    dum = dum + hex(i) +' '+ val + os.linesep
         return values
 
-    # edit
+    # TODO: Edit this function to be more efficient
     def dump_data(self) -> list:
         values = list()
         for i in range(0x2000, 0x2050):
