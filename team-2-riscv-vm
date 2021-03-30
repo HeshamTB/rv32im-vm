@@ -3,6 +3,7 @@
 from argparse import ArgumentParser
 from mem import Memory
 from CPU import CPU
+from myhdl import intbv
 # TODO: check for myhdl if needed
 
 # From memory-layout.txt
@@ -15,7 +16,8 @@ _add_heap_base = 0x3000
 
 _add_global_ptr = 0x1800
 print('RV32IM VM (Team 2)')
-
+_index_sp = 2
+_index_gp = 3
 def main():
     files = parseArgs()['input_files']
     # Read bin/mem files
@@ -35,7 +37,11 @@ def main():
     #     print(hex(i), val)
     # Start CPU
     cpu = CPU(RAM)
+    cpu.regs[_index_sp] = intbv(_add_stack_base)[32:0]
+    cpu.regs[_index_gp] = intbv(_add_global_ptr)[32:0]
     while 1:
+        printRegs(cpu.regs)
+        print('pc = {}'.format(cpu.pc))
         cpu.fetch()
         if not cpu.jump_flag:
             cpu.pc += 4
@@ -46,6 +52,17 @@ def parseArgs() -> dict:
     parser.add_argument('input_files', type=str, nargs=2)
     parsed = parser.parse_args() # Defualts to sys.argv[]
     return vars(parsed)
+
+def printRegs(regs : list):
+    counter = 0
+    for i in range(len(regs)):
+        for j in range(4):
+            if counter+j > 31:
+                print()
+                return
+            print('x{} = {} '.format(counter+j, regs[counter+j]), end='')
+        counter += 4
+        print()
 
 def readMemFile(file_name: str) -> bytearray:
     """
