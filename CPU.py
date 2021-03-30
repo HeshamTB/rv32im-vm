@@ -197,10 +197,11 @@ class CPU:
 
         src1 = intbv(self.regs[rs1])[32:0]
         print(self.regs[rs2])
-        print(width)
+        #print(width)
         src2 = int(intbv(self.regs[rs2])[8*width:0]).to_bytes(width, 'little')
         target_address = imm + src1
-        print(target_address)
+        print('src1 {} src2 {} target_add {}'.format(src1, src2, target_address))
+        #print(target_address)
         # Loop, each time store one byte from src2 in the memory.
 
         for i in range(width):
@@ -379,7 +380,7 @@ class CPU:
             rs2 = data_holder[24:20]
             funct3 = data_holder[15:12]
             funct7 = data_holder[32:25]
-            print("Type R: func7: " + funct7 + "\t func3: "+ funct3 + "\t rs1: " + rs1 + "\t rs2: " + rs2  +"\t rd: "+ rd)
+            print("Type R: func7: " + str(funct7) + "\t func3: "+ str(funct3) + "\t rs1: " + str(rs1) + "\t rs2: " + str(rs2)  +"\t rd: "+ str(rd))
             # look for the correct instruction via func3 and func7
             if funct3 == 0b000:
                 if funct7 == 0x0:
@@ -431,7 +432,7 @@ class CPU:
             rs1 = data_holder[20:15]
             imm = data_holder[32:20]
             print(
-                "Type I1: imm: " + imm + "\t func3: " + funct3 + "\t rs1: " + rs1 + "\t rd: " + rd)
+                "Type I1: imm: " + str(imm) + "\t func3: " + str(funct3) + "\t rs1: " + str(rs1) + "\t rd: " + str(rd))
             if funct3 == 0x0:
                 self.ADD(rs1, imm, rd)
             if funct3 == 0x4:
@@ -457,7 +458,7 @@ class CPU:
             rs1 = data_holder[20:15]
             imm = data_holder[32:20]
             print(
-                "Type I2: imm: " + imm + "\t func3: " + funct3 + "\t rs1: " + rs1 + "\t rd: " + rd)
+                "Type I2: imm: " + str(imm) + "\t func3: " + str(funct3) + "\t rs1: " + str(rs1) + "\t rd: " + str(rd))
 
             if funct3 == 0x0:
                 self.LOAD(rd, rs1, imm)
@@ -472,7 +473,7 @@ class CPU:
 
         if type_t == 'I3':
             print(
-                "Type I3: imm: " + imm + "\t func3: " + funct3 + "\t rs1: " + rs1 + "\t rd: " + rd)
+                "Type I3: imm: " + str(imm) + "\t func3: " + str(funct3) + "\t rs1: " + str(rs1) + "\t rd: " + str(rd))
             rd = data_holder[12:7]
             funct3 = data_holder[15:12]
             rs1 = data_holder[20:15]
@@ -485,7 +486,7 @@ class CPU:
             rs1 = data_holder[20:15]
             imm = data_holder[32:20]
             print(
-                "Type I4: imm: " + imm + "\t func3: " + funct3 + "\t rs1: " + rs1 + "\t rd: " + rd)
+                "Type I4: imm: " + str(imm) + "\t func3: " + str(funct3) + "\t rs1: " + str(rs1) + "\t rd: " + str(rd))
 
             if imm == 0x0:
                 self.ecall()
@@ -521,18 +522,15 @@ class CPU:
                 imm += intbv(data_holder[bits_order[i]] << i)
                 counter += 1
             print(
-                "Type S: imm: " + imm + "\t func3: " + funct3 + "\t rs1: " + rs1 + "\t rs2: " + rs2)
+                "Type S: imm: " + str(imm) + "\t func3: " + str(funct3) + "\t rs1: " + str(rs1) + "\t rs2: " + str(rs2))
 
 
             # change the imm to intbv
             if funct3 == 0x0:
-                print("sb")
                 self.STORE(rs1, rs2, imm, width=1)
             if funct3 == 0x1:
-                print("sh")
                 self.STORE(rs1, rs2, imm, width=2)
             if funct3 == 0x2:
-                print("sw")
                 self.STORE(rs1, rs2, imm, width=4)
 
             # ------------ S type execution section ------------#
@@ -554,7 +552,7 @@ class CPU:
             rs2 = data_holder[25:20]
 
             print(
-                "Type B: imm: " + imm + "\t func3: " + funct3 + "\t rs1: " + rs1 + "\t rs2: " + rs2)
+                "Type B: imm: " + str(imm) + "\t func3: " + str(funct3) + "\t rs1: " + str(rs1) + "\t rs2: " + str(rs2))
 
             if funct3 == 0x0:
                 self.BRANCH(rs1, rs2, imm, 'e')
@@ -574,12 +572,12 @@ class CPU:
         if type_t == 'U1':
             rd = data_holder[12:7]
             imm = data_holder[32:12]
-            print("Type LUI: imm: " + imm + "\t rd: " + rd)
+            print("Type LUI: imm: " + str(imm) + "\t rd: " + str(rd))
             self.LUI(rd, imm)
         if type_t == 'U2':
             rd = data_holder[12:7]
             imm = data_holder[32:12]
-            print("Type AUIPC: imm: " + imm + "\t rd: " + rd)
+            print("Type AUIPC: imm: " + str(imm) + "\t rd: " + str(rd))
             self.AUIPC(rd, imm)
             # ------------ U type execution section ------------#
 
@@ -616,7 +614,7 @@ class CPU:
                 counter += 1
             imm = intbv(imm << 1)[21:]
 
-            print("Type JAL: imm: " + imm + "\t rd: " + rd)
+            print("Type JAL: imm: " + str(imm) + "\t rd: " + str(rd))
 
             self.JAL(rd, imm)
 
