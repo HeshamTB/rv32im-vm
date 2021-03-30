@@ -54,22 +54,22 @@ class CPU:
     # ------------------------------------------- Basic instructions ------------------------------------------- #
     # ------ These return, but don't update registers. updating regs is caller responsibility in this case ------ #
     def ADD(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
-        self.regs[rd] = arg1 + arg2
+        self.regs[rd] = intbv(arg1 + arg2)[32:]
         return arg1 + arg2
 
     def SUB(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
         return self.ADD(arg1, -arg2, rd)
 
     def OR(self, arg1, arg2, rd):
-        self.regs[rd] = arg1 | arg2
+        self.regs[rd] = intbv(arg1 | arg2)[32:]
         return arg1 | arg2
 
     def XOR(self, arg1, arg2, rd):
-        self.regs[rd] = arg1 ^ arg2
+        self.regs[rd] = intbv(arg1 ^ arg2)[32:]
         return arg1 ^ arg2
 
     def AND(self, arg1, arg2, rd):
-        self.regs[rd] = arg1 & arg2
+        self.regs[rd] = intbv(arg1 & arg2)[32:]
         return arg1 & arg2
 
     def SHIFT(self, arg1: intbv, arg2: intbv, rd, dir='r', signed=False):  # needs testing
@@ -84,13 +84,13 @@ class CPU:
         """
         if dir == "r":
             if signed:
-                self.regs[rd] = arg1.signed() >> arg2.signed()
+                self.regs[rd] = intbv(arg1.signed() >> arg2.signed())[32:]
                 return arg1.signed() >> arg2.signed()
             else:
-                self.regs[rd] = arg1 >> arg2
+                self.regs[rd] = intbv(arg1 >> arg2)[32:]
                 return arg1 >> arg2  # arg1 is not signed number
         elif dir == "l":
-            self.regs[rd] = arg1 << arg2
+            self.regs[rd] = intbv(arg1 << arg2)[32:]
             return arg1 << arg2
 
     def COMPARE(self, arg1: intbv, arg2: intbv, rd, cond="e", signed=True):
@@ -108,45 +108,45 @@ class CPU:
             arg2 = arg2.signed()
         # Check the conditions
         if cond == "e":
-            self.regs[rd] = int(arg1 == arg2)
+            self.regs[rd] = intbv(arg1 == arg2)[32:]
             return arg1 == arg2
         elif cond == "l":
-            self.regs[rd] = int(arg1 < arg2)
+            self.regs[rd] = intbv(arg1 < arg2)[32:]
             return arg1 < arg2
         elif cond == "g":
-            self.regs[rd] = int(arg1 > arg2)
+            self.regs[rd] = intbv(arg1 > arg2)[32:]
             return arg1 > arg2
         elif cond == "le":
-            self.regs[rd] = int(arg1 <= arg2)
+            self.regs[rd] = intbv(arg1 <= arg2)[32:]
         elif cond == "ge":
-            self.regs[rd] = int(arg1 >= arg2)
+            self.regs[rd] = intbv(arg1 >= arg2)[32:]
 
     def MUL(self, arg1: intbv, arg2: intbv, rd, sign='S'):
         # I considered the notation (s)(u) to mean arg1 is signed, arg2 not signed
         if sign.capitalize() == 'SU':
-            self.regs[rd] = arg1.signed() * arg2.unsigned()
+            self.regs[rd] = intbv(arg1.signed() * arg2.unsigned())[32:]
             return arg1.signed() * arg2.unsigned()
         elif sign.capitalize() == 'U':
-            self.regs[rd] = arg1 * arg2
+            self.regs[rd] = intbv(arg1 * arg2)[32:]
             return arg1 * arg2
         elif sign.capitalize() == 'S':
-            self.regs[rd] = arg1.signed() * arg2.signed()
+            self.regs[rd] = intbv(arg1.signed() * arg2.signed())[32:]
             return arg1.signed() * arg2.signed()
         else:
             print("Error: condition " + sign + " is not defined for MUL function")
 
     def DIV(self, arg1: intbv, arg2: intbv, rd, signed=True):
         if signed:
-            self.regs[rd] = arg1.signed() // arg2.signed()
+            self.regs[rd] = intbv(arg1.signed() // arg2.signed())[32:]
             return arg1.signed() // arg2.signed()
-        self.regs[rd] = arg1 // arg2
+        self.regs[rd] = intbv(arg1 // arg2)[32:]
         return arg1 // arg2
 
     def REM(self, arg1: intbv, arg2: intbv, rd, signed=True):
         if signed:
-            self.regs[rd] = arg1.signed() % arg2.signed()
+            self.regs[rd] = intbv(arg1.signed() % arg2.signed())[32:]
             return arg1.signed() % arg2.signed()
-        self.regs[rd] = arg1 % arg2
+        self.regs[rd] = intbv(arg1 % arg2)[32:]
         return arg1 % arg2
 
     # -------------------------- instructions of load -------------------------- #
@@ -178,7 +178,7 @@ class CPU:
             print("Error: please enter valid load width")
             exit(0)
         # Store the loaded byte as an integer in the destination reg
-        self.regs[rd] = int.from_bytes(loaded_bytes, 'little')
+        self.regs[rd] = intbv(int.from_bytes(loaded_bytes, 'little')).signed()[32:]  # TODO: check sign extension
 
     # -------------------------- instructions of store -------------------------- #
     def STORE(self, rs1, rs2, imm: intbv, width=1):
@@ -196,9 +196,13 @@ class CPU:
             print("Error, maximum width is 4")
 
         src1 = intbv(self.regs[rs1])[32:0]
-        src2 = self.regs[rs2].to_bytes(width, 'little')
+        print(self.regs[rs2])
+        print(width)
+        src2 = int(intbv(self.regs[rs2])[8*width:0]).to_bytes(width, 'little')
         target_address = imm + src1
+        print(target_address)
         # Loop, each time store one byte from src2 in the memory.
+
         for i in range(width):
             store_byte = src2[i].to_bytes(1, 'little')
             self.ram.write(target_address + i, store_byte)
@@ -233,6 +237,7 @@ class CPU:
             print("Error: Please enter valid comparison condition")
 
         if res:
+            self.jump_flag = True
             self.pc += imm
 
     # -------------------------- Jump instructions -------------------------- #
@@ -245,9 +250,9 @@ class CPU:
         Returns:
         """
         # First, shift the immediate to left once to multiply by 2
-        imm = imm << 1
-        imm = intbv(imm)[21:0]
+        imm = intbv(imm).signed()[21:0]  # TODO: check sign extension
         self.regs[rd] = self.pc + 4  # Save return address in rd
+        self.jump_flag = True
         self.pc += imm  # jump
 
     def JALR(self, rd, rs1, imm: intbv):
@@ -260,6 +265,7 @@ class CPU:
         Returns: None
         """
         self.regs[rd] = self.pc + 4
+        self.jump_flag = True
         self.pc = self.regs[rs1] + imm
 
     # -------------------------- Instructions with large immediate -------------------------- #
@@ -373,6 +379,7 @@ class CPU:
             rs2 = data_holder[24:20]
             funct3 = data_holder[15:12]
             funct7 = data_holder[32:25]
+            print("Type R: func7: " + funct7 + "\t func3: "+ funct3 + "\t rs1: " + rs1 + "\t rs2: " + rs2  +"\t rd: "+ rd)
             # look for the correct instruction via func3 and func7
             if funct3 == 0b000:
                 if funct7 == 0x0:
@@ -423,7 +430,8 @@ class CPU:
             funct3 = data_holder[15:12]
             rs1 = data_holder[20:15]
             imm = data_holder[32:20]
-
+            print(
+                "Type I1: imm: " + imm + "\t func3: " + funct3 + "\t rs1: " + rs1 + "\t rd: " + rd)
             if funct3 == 0x0:
                 self.ADD(rs1, imm, rd)
             if funct3 == 0x4:
@@ -448,6 +456,9 @@ class CPU:
             funct3 = data_holder[15:12]
             rs1 = data_holder[20:15]
             imm = data_holder[32:20]
+            print(
+                "Type I2: imm: " + imm + "\t func3: " + funct3 + "\t rs1: " + rs1 + "\t rd: " + rd)
+
             if funct3 == 0x0:
                 self.LOAD(rd, rs1, imm)
             if funct3 == 0x1:
@@ -460,6 +471,8 @@ class CPU:
                 self.LOAD(rd, rs1, imm, 2, False)
 
         if type_t == 'I3':
+            print(
+                "Type I3: imm: " + imm + "\t func3: " + funct3 + "\t rs1: " + rs1 + "\t rd: " + rd)
             rd = data_holder[12:7]
             funct3 = data_holder[15:12]
             rs1 = data_holder[20:15]
@@ -471,6 +484,9 @@ class CPU:
             funct3 = data_holder[15:12]
             rs1 = data_holder[20:15]
             imm = data_holder[32:20]
+            print(
+                "Type I4: imm: " + imm + "\t func3: " + funct3 + "\t rs1: " + rs1 + "\t rd: " + rd)
+
             if imm == 0x0:
                 self.ecall()
             if imm == 0x1:
@@ -481,19 +497,22 @@ class CPU:
         if type_t == 'S':
             rs1 = data_holder[20:15]
             rs2 = data_holder[25:20]
-            buffer = []
-            buffer.append(data_holder[7])
-            buffer.append(data_holder[8])
-            buffer.append(data_holder[9])
-            buffer.append(data_holder[10])
-            buffer.append(data_holder[11])
-            buffer.append(data_holder[25])
-            buffer.append(data_holder[26])
-            buffer.append(data_holder[27])
-            buffer.append(data_holder[28])
-            buffer.append(data_holder[29])
-            buffer.append(data_holder[30])
-            buffer.append(data_holder[31])
+            funct3 = data_holder[15:12]
+            # buffer = []
+            # buffer.append(data_holder[7])
+            # buffer.append(data_holder[8])
+            # buffer.append(data_holder[9])
+            # buffer.append(data_holder[10])
+            # buffer.append(data_holder[11])
+            # buffer.append(data_holder[25])
+            # buffer.append(data_holder[26])
+            # buffer.append(data_holder[27])
+            # buffer.append(data_holder[28])
+            # buffer.append(data_holder[29])
+            # buffer.append(data_holder[30])
+            # buffer.append(data_holder[31])
+
+
 
             imm = intbv(0)[12:]
             bits_order = [7, 8, 9, 10, 11, 25, 26, 27, 28, 29, 30, 31]
@@ -501,14 +520,20 @@ class CPU:
             for i in range(12):
                 imm += intbv(data_holder[bits_order[i]] << i)
                 counter += 1
+            print(
+                "Type S: imm: " + imm + "\t func3: " + funct3 + "\t rs1: " + rs1 + "\t rs2: " + rs2)
+
 
             # change the imm to intbv
             if funct3 == 0x0:
-                self.STORE(rs1, rs2, imm)
+                print("sb")
+                self.STORE(rs1, rs2, imm, width=1)
             if funct3 == 0x1:
-                self.STORE(rs1, rs2, imm, 2)
+                print("sh")
+                self.STORE(rs1, rs2, imm, width=2)
             if funct3 == 0x2:
-                self.STORE(rs1, rs2, imm, 4)
+                print("sw")
+                self.STORE(rs1, rs2, imm, width=4)
 
             # ------------ S type execution section ------------#
 
@@ -528,6 +553,9 @@ class CPU:
             rs1 = data_holder[20:15]
             rs2 = data_holder[25:20]
 
+            print(
+                "Type B: imm: " + imm + "\t func3: " + funct3 + "\t rs1: " + rs1 + "\t rs2: " + rs2)
+
             if funct3 == 0x0:
                 self.BRANCH(rs1, rs2, imm, 'e')
             if funct3 == 0x1:
@@ -546,10 +574,12 @@ class CPU:
         if type_t == 'U1':
             rd = data_holder[12:7]
             imm = data_holder[32:12]
+            print("Type LUI: imm: " + imm + "\t rd: " + rd)
             self.LUI(rd, imm)
         if type_t == 'U2':
             rd = data_holder[12:7]
             imm = data_holder[32:12]
+            print("Type AUIPC: imm: " + imm + "\t rd: " + rd)
             self.AUIPC(rd, imm)
             # ------------ U type execution section ------------#
 
@@ -585,6 +615,8 @@ class CPU:
                 imm += intbv(data_holder[bits_order[i]] << i)
                 counter += 1
             imm = intbv(imm << 1)[21:]
+
+            print("Type JAL: imm: " + imm + "\t rd: " + rd)
 
             self.JAL(rd, imm)
 
