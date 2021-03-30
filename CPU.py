@@ -239,7 +239,7 @@ class CPU:
 
         if res:
             self.jump_flag = True
-            self.pc += imm
+            self.pc = self.pc + int(imm.signed())
 
     # -------------------------- Jump instructions -------------------------- #
     def JAL(self, rd, imm: intbv):
@@ -265,7 +265,7 @@ class CPU:
             imm: immediate value, serves as offset. Usually 0
         Returns: None
         """
-        self.regs[rd] = self.pc + 4
+        self.regs[rd] = intbv(self.pc + 4)[32:0]
         self.jump_flag = True
         self.pc = self.regs[rs1] + imm
 
@@ -545,7 +545,9 @@ class CPU:
             for i in range(12):
                 imm += intbv(data_holder[bits_order[i]] << i)
                 counter += 1
-            imm = intbv(imm<<1)[13:]
+            imm = int(intbv(imm)[12:].signed() << 1)
+            print(int(imm))
+            imm = intbv(imm).signed()[32:]
             # must make the intbv arg as an int
             funct3 = data_holder[15:12]
             rs1 = data_holder[20:15]
