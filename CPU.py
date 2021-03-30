@@ -29,10 +29,11 @@ class CPU:
         Fetch the next instruction from the memory.
     """
     def fetch(self):
+        self.jump_flag = False
+        self.regs[0] = intbv(0)
         inst = self.ram.readWord(self.pc)
         inst = int.from_bytes(inst, byteorder='little')
         self.execution1(intbv(inst)[32:])
-        self.jump_flag = False
 
     # =========== Decoding Area =========== #
     """
@@ -54,7 +55,7 @@ class CPU:
     # ------------------------------------------- Basic instructions ------------------------------------------- #
     # ------ These return, but don't update registers. updating regs is caller responsibility in this case ------ #
     def ADD(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
-        self.regs[rd] = intbv(arg1 + arg2)[32:]
+        self.regs[rd] = intbv(arg1.signed() + arg2.signed())[32:]
         return arg1 + arg2
 
     def SUB(self, arg1: intbv, arg2: intbv, rd: intbv) -> int:
@@ -239,7 +240,7 @@ class CPU:
 
         if res:
             self.jump_flag = True
-            self.pc += imm
+            self.pc = self.pc + int(imm.signed())
 
     # -------------------------- Jump instructions -------------------------- #
     def JAL(self, rd, imm: intbv):
@@ -254,7 +255,7 @@ class CPU:
         imm = intbv(imm).signed()[21:0]  # TODO: check sign extension
         self.regs[rd] = intbv(self.pc + 4)[32:0]  # Save return address in rd
         self.jump_flag = True
-        self.pc += imm  # jump
+        self.pc = self.pc + imm  # jump
 
     def JALR(self, rd, rs1, imm: intbv):
         """
@@ -265,7 +266,7 @@ class CPU:
             imm: immediate value, serves as offset. Usually 0
         Returns: None
         """
-        self.regs[rd] = self.pc + 4
+        self.regs[rd] = intbv(self.pc + 4)[32:0]
         self.jump_flag = True
         self.pc = self.regs[rs1] + imm
 
@@ -339,7 +340,7 @@ class CPU:
         type_t = ''
 
         for i in range(len(key_opcodes)):
-            if data_holder[6:0] == key_opcodes[i]:
+            if data_holder[7:0] == key_opcodes[i]:
                 #print('match found')
 
                 if i == 0:
@@ -434,13 +435,13 @@ class CPU:
             print(
                 "Type I1: imm: " + str(imm) + "\t func3: " + str(funct3) + "\t rs1: " + str(rs1) + "\t rd: " + str(rd))
             if funct3 == 0x0:
-                self.ADD(rs1, imm, rd)
+                self.ADD(self.regs[rs1], imm, rd)
             if funct3 == 0x4:
-                self.XOR(rs1, imm, rd)
+                self.XOR(self.regs[rs1], imm, rd)
             if funct3 == 0x6:
-                self.OR(rs1, imm, rd)
+                self.OR(self.regs[rs1], imm, rd)
             if funct3 == 0x7:
-                self.AND(rs1, imm, rd)
+                self.AND(self.regs[rs1], imm, rd)
             if funct3 == 0x1 and imm == 0x0:
                 self.SHIFT(self.regs[rs1], imm, rd)
             if funct3 == 0x5 and imm == 0x0:
@@ -545,7 +546,9 @@ class CPU:
             for i in range(12):
                 imm += intbv(data_holder[bits_order[i]] << i)
                 counter += 1
-            imm = intbv(imm<<1)[13:]
+            imm = int(intbv(imm)[12:].signed() << 1)
+            print(int(imm))
+            imm = intbv(imm).signed()[32:]
             # must make the intbv arg as an int
             funct3 = data_holder[15:12]
             rs1 = data_holder[20:15]
@@ -582,7 +585,7 @@ class CPU:
             # ------------ U type execution section ------------#
 
         if type_t == 'J':
-            rd = data_holder[21:]
+            rd = data_holder[12:7]
             # buffer = []
             # buffer.append(0b0)
             # buffer.append(data_holder[21])
