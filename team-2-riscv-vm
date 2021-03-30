@@ -36,8 +36,9 @@ def main():
     # Start CPU
     cpu = CPU(RAM)
     while 1:
-        #cpu.fetch()
-        pass
+        cpu.fetch()
+        if not cpu.jump_flag:
+            cpu.pc += 4
 
 def parseArgs() -> dict:
     # TODO: Add mem allocation option
