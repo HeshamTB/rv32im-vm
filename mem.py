@@ -41,7 +41,7 @@ class Memory:
         val = int.from_bytes(self.mem[address], 'little')
         return val
     
-    def dump(self) -> list[str]:
+    def dump(self) -> list:
         values = list()
         for i, val in enumerate(self.mem):
             values.append(hex(int.from_bytes(val, 'little')))

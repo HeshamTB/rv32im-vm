@@ -16,7 +16,7 @@ _syscall_print = 64
 _stdout = 1
 _stderr = 2
 
-def handle(regs: list[intbv], mem: Memory):
+def handle(regs: list, mem: Memory):
     # Read reg values
     # a7 req/funct
     # a1, a2 from to if print
