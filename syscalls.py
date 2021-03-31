@@ -36,7 +36,7 @@ def handle(regs: list, mem: Memory):
             if i % 4 == 0:
                 print("\n")
             print(hex(int.from_bytes(data[i], byteorder='little')), end=" ")
-
+        _saveMemDump(mem)
         _sys_exit(int(exit_val))
     elif regs[_function] == _syscall_halt:
         _sys_halt()
@@ -61,8 +61,15 @@ def _sys_exit(code: int):
 
 def _sys_halt():
     input("system is halted")
+    # After a halt, we assume a CPU can not recover with out intervention.
     exit()
 
+def _saveMemDump(mem: Memory):
+    data = bytearray()
+    for val in mem.mem:
+        data += val
+    with open('mem-dump.bin', 'wb') as file:
+        file.write(data)
 
 def _getTextFromMem(mem: Memory, start_add, length):
     val = bytes()
