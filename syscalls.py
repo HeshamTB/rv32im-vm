@@ -27,9 +27,9 @@ def handle(regs: list, mem: Memory):
         # Print to console
         data = _getTextFromMem(mem, regs[_address].unsigned(), regs[_length].unsigned())
         stream = regs[_code].unsigned()
-        _sys_print(stream, data)
+        _sys_print(data, stream)
     elif regs[_function] == _syscall_exit:
-        exit_val = regs[_code] # Exit code in a0, x10. could be signed
+        exit_val = regs[_code]  # Exit code in a0, x10. could be signed
         # dump the data section of memory before exiting
         data = mem.dump_data()
         for i in range(len(data)):
@@ -44,6 +44,7 @@ def handle(regs: list, mem: Memory):
         # Unimplemented req
         pass
 
+
 def _sys_print(data, stream: int = 0):
     # stdin 0, stdout 1, stderr 2
     if stream == _stdout:
@@ -53,12 +54,15 @@ def _sys_print(data, stream: int = 0):
     else:
         pass # Exception?
 
+
 def _sys_exit(code: int):
     exit(code)
+
 
 def _sys_halt():
     input("system is halted")
     exit()
+
 
 def _getTextFromMem(mem: Memory, start_add, length):
     val = bytes()
