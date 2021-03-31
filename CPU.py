@@ -11,7 +11,6 @@ class CPU:
             3- Decode instructions
             4- Execute instructions
     """
-
     # Constructor of CPU
     def __init__(self, ram: Memory):
         """
@@ -308,6 +307,7 @@ class CPU:
             self.AUIPC(rd, imm)
 
         if type_t == 'J':
+            rd = data_holder[12:7]
             imm = intbv(0)[21:]
             # imm bits -> 0,  1,  2,   3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
             bits_order = [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 20, 12, 13, 14, 15, 16, 17, 18, 19, 31]
